@@ -159,8 +159,13 @@ const App: React.FC = () => {
         const fetchBattles = async () => {
             const { data, error } = await supabase
                 .from('battles')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .select('*');
+
+            if (error) {
+                console.error('Fetch Error:', error);
+                // Alerting for visibility during debugging
+                alert('DB Fetch Error: ' + JSON.stringify(error, null, 2));
+            }
 
             if (data) {
                 // Transform snake_case DB to camelCase UI
@@ -276,13 +281,8 @@ const App: React.FC = () => {
         }).select();
 
         if (error) {
-            console.error('Supabase Error Details:', {
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                code: error.code
-            });
-            alert(`Failed to create battle: ${error.message}`);
+            console.error('Supabase Error Details:', error);
+            alert(`DB Insert Error: ${JSON.stringify(error, null, 2)}`);
         } else {
             setCreateVattleModalOpen(false);
             // If it's a quick battle, maybe navigate immediately?
