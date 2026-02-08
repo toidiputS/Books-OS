@@ -58,7 +58,7 @@ const LabEditor: React.FC<LabEditorProps> = ({ initialPrompt }) => {
             3. Do not include markdown formatting.`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: 'gemini-1.5-flash',
                 contents: `${systemPrompt}\n\nUser Prompt: "${prompt}"`,
                 config: { responseMimeType: 'application/json' }
             });

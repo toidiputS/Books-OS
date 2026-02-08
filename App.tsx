@@ -260,24 +260,46 @@ const App: React.FC = () => {
     const handleCreateVattle = async (config: Omit<VattleConfig, 'id' | 'status' | 'startTime' | 'creatorName'>) => {
         if (!session) return;
 
-        // Optimistic UI update can happen here, but we'll rely on DB insert
-        const { error } = await supabase.from('battles').insert({
+        // Ensure we have a valid-looking UUID if in guest mode to prevent DB type errors
+        const creatorId = session.user.id === 'guest' ? '00000000-0000-0000-0000-000000000000' : session.user.id;
+
+        const { data, error } = await supabase.from('battles').insert({
             theme: config.theme,
             mode: config.mode,
             opponent_type: config.opponent,
             time_limit: config.timeLimit,
-            creator_id: session.user.id,
-            creator_name: userProfile.name, // Denormalizing for easier fetching in this demo
+            creator_id: creatorId,
+            creator_name: userProfile.name,
             opponent_name: config.invitedOpponent,
             status: config.invitedOpponent === 'Open Invite' ? 'pending' : 'active',
             start_time: config.invitedOpponent === 'Open Invite' ? null : new Date().toISOString()
-        });
+        }).select();
 
         if (error) {
-            console.error('Error creating vattle:', error);
-            alert('Failed to create battle. Check console.');
+            console.error('Supabase Error Details:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+            });
+            alert(`Failed to create battle: ${error.message}`);
         } else {
             setCreateVattleModalOpen(false);
+            // If it's a quick battle, maybe navigate immediately?
+            if (data && data[0]) {
+                const newVattle = {
+                    ...config,
+                    id: data[0].id,
+                    status: data[0].status,
+                    creatorName: userProfile.name,
+                    startTime: data[0].start_time ? new Date(data[0].start_time).getTime() : undefined
+                } as VattleConfig;
+
+                setVattles(prev => [newVattle, ...prev]);
+                if (newVattle.status === 'active') {
+                    handleEnterBattle(newVattle);
+                }
+            }
         }
     };
 
