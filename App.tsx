@@ -18,6 +18,9 @@ import VibeLabsView from './components/VibeLabsView';
 import ApiView from './components/ApiView';
 import StreamingView from './components/StreamingView';
 import OnboardingView from './components/OnboardingView';
+import LiveStatsOverlay from './components/LiveStatsOverlay';
+import VotingOverlay from './components/VotingOverlay';
+import { getLocalBattles, saveLocalBattle, updateLocalBattle } from './lib/db';
 
 // Components
 import Header from './components/Header';
@@ -55,13 +58,14 @@ const mockTournaments: Tournament[] = [
     { id: 't1', title: 'Vibe Masters Winter Circuit', theme: 'Winter Wonderland', type: 'official', status: 'live', prizePool: '$5,000', maxParticipants: 64, participants: Array.from({ length: 60 }, (_, i) => ({ id: `p${i}`, name: `Vattler${i}`, seed: i + 1, avatarUrl: `https://i.pravatar.cc/40?u=p${i}` })), rounds: [] },
 ];
 
-type View = 'auth' | 'arena' | 'battle' | 'spectate' | 'voting' | 'profile' | 'rankings' | 'tournaments' | 'tournament_detail' | 'vibelabs' | 'api' | 'streaming' | 'onboarding';
+type View = 'auth' | 'arena' | 'battle' | 'spectate' | 'voting' | 'profile' | 'rankings' | 'tournaments' | 'tournament_detail' | 'vibelabs' | 'api' | 'streaming' | 'onboarding' | 'overlay_stats' | 'overlay_voting';
 
 const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [userProfile, setUserProfile] = useState<UserProfile>(initialUserProfile);
     const [authLoading, setAuthLoading] = useState(true);
     const [view, setView] = useState<View>('auth');
+    const [overlayId, setOverlayId] = useState<string>('');
 
     // Data State
     const [vattles, setVattles] = useState<VattleConfig[]>([
@@ -111,40 +115,74 @@ const App: React.FC = () => {
             }
         });
 
+        // 3. Simple Routing for Overlays
+        const path = window.location.pathname;
+        if (path.startsWith('/overlay/')) {
+            const segments = path.split('/');
+            const type = segments[2];
+            const id = segments[3];
+
+            if (id) {
+                setOverlayId(id);
+                if (type === 'live-stats') setView('overlay_stats');
+                if (type === 'voting') setView('overlay_voting');
+
+                // If we're in an overlay, we might need a "guest" session to keep logic happy
+                if (!session) handleGuestLogin();
+            }
+        }
+
         return () => subscription.unsubscribe();
     }, []);
 
     const fetchProfile = async (userId: string) => {
+        if (userId === 'guest') {
+            setUserProfile({
+                ...initialUserProfile,
+                name: 'Guest Vattler'
+            });
+            setAuthLoading(false);
+            return;
+        }
+
         try {
-            const { data, error } = await supabase
+            console.log('Attempting to fetch profile for:', userId);
+            const { data, error, status } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
-                .single();
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') {
-                console.error('Error fetching profile:', error);
+            if (error) {
+                console.error('Supabase Profile Fetch Error:', {
+                    status,
+                    code: error.code,
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint
+                });
+
+                if (status === 406) {
+                    console.warn('406 Error detected. This usually means the "profiles" table is missing or columns mismatch.');
+                }
             }
 
             if (data) {
-                // Map DB profile to App UserProfile
-                const profile: UserProfile = {
+                setUserProfile({
                     ...initialUserProfile,
                     id: data.id,
                     name: data.username || 'Vattler',
                     avatarUrl: data.avatar_url || initialUserProfile.avatarUrl,
                     hasCompletedOnboarding: !!data.username,
-                    // Load other fields as needed from JSONB columns if implemented
-                };
-                setUserProfile(profile);
-                if (!profile.hasCompletedOnboarding) setView('onboarding');
+                });
+                if (!data.username) setView('onboarding');
                 else if (view === 'auth') setView('arena');
             } else {
-                // Profile doesn't exist yet, go to onboarding
+                console.log('No profile found, redirecting to onboarding.');
                 setView('onboarding');
             }
         } catch (err) {
-            console.error(err);
+            console.error('Fetch Profile Exception:', err);
         } finally {
             setAuthLoading(false);
         }
@@ -155,16 +193,17 @@ const App: React.FC = () => {
     useEffect(() => {
         if (!session) return;
 
-        // Fetch initial battles
+        // Fetch initial battles with local rescue
         const fetchBattles = async () => {
             const { data, error } = await supabase
                 .from('battles')
                 .select('*');
 
             if (error) {
-                console.error('Fetch Error:', error);
-                // Alerting for visibility during debugging
-                alert('DB Fetch Error: ' + JSON.stringify(error, null, 2));
+                console.warn('Supabase unavailable, using Local Storage rescue.', error);
+                const localData = getLocalBattles();
+                setVattles(prev => [...localData, ...prev.filter(p => !localData.find(l => l.id === p.id))]);
+                return;
             }
 
             if (data) {
@@ -281,25 +320,33 @@ const App: React.FC = () => {
         }).select();
 
         if (error) {
-            console.error('Supabase Error Details:', error);
-            alert(`DB Insert Error: ${JSON.stringify(error, null, 2)}`);
-        } else {
-            setCreateVattleModalOpen(false);
-            // If it's a quick battle, maybe navigate immediately?
-            if (data && data[0]) {
-                const newVattle = {
-                    ...config,
-                    id: data[0].id,
-                    status: data[0].status,
-                    creatorName: userProfile.name,
-                    startTime: data[0].start_time ? new Date(data[0].start_time).getTime() : undefined
-                } as VattleConfig;
+            console.error('Database Sync Error:', error);
+            // Rescue mode: Keep the session alive locally even if DB is resetting
+            const localId = 'local-' + Date.now();
+            const newVattle = {
+                ...config,
+                id: localId,
+                status: config.invitedOpponent === 'Open Invite' ? 'pending' : 'active',
+                creatorName: userProfile.name,
+                startTime: config.invitedOpponent === 'Open Invite' ? undefined : Date.now()
+            } as VattleConfig;
 
-                setVattles(prev => [newVattle, ...prev]);
-                if (newVattle.status === 'active') {
-                    handleEnterBattle(newVattle);
-                }
-            }
+            saveLocalBattle(newVattle);
+            setVattles(prev => [newVattle, ...prev]);
+            setCreateVattleModalOpen(false);
+            if (newVattle.status === 'active') handleEnterBattle(newVattle);
+        } else if (data && data[0]) {
+            setCreateVattleModalOpen(false);
+            const newVattle = {
+                ...config,
+                id: data[0].id,
+                status: data[0].status,
+                creatorName: userProfile.name,
+                startTime: data[0].start_time ? new Date(data[0].start_time).getTime() : undefined
+            } as VattleConfig;
+
+            setVattles(prev => [newVattle, ...prev]);
+            if (newVattle.status === 'active') handleEnterBattle(newVattle);
         }
     };
 
@@ -399,6 +446,17 @@ const App: React.FC = () => {
 
     const handleCompleteOnboarding = async (newUsername: string, newAvatarUrl: string) => {
         if (!session) return;
+
+        if (session.user.id === 'guest') {
+            setUserProfile(prev => ({
+                ...prev,
+                name: newUsername,
+                avatarUrl: newAvatarUrl,
+                hasCompletedOnboarding: true,
+            }));
+            setView('arena');
+            return;
+        }
 
         const { error } = await supabase.from('profiles').upsert({
             id: session.user.id,
@@ -525,6 +583,10 @@ const App: React.FC = () => {
                 return <ApiView onBack={() => setView('arena')} />;
             case 'streaming':
                 return <StreamingView onBack={() => setView('arena')} />;
+            case 'overlay_stats':
+                return <LiveStatsOverlay vattleId={overlayId} />;
+            case 'overlay_voting':
+                return <VotingOverlay vattleId={overlayId} />;
             default:
                 return <VattleArena
                     userProfile={userProfile}
@@ -540,7 +602,7 @@ const App: React.FC = () => {
         }
     }
 
-    const isImmersiveView = view === 'battle' || view === 'spectate';
+    const isImmersiveView = view === 'battle' || view === 'spectate' || view === 'overlay_stats' || view === 'overlay_voting';
 
     return (
         <div className="bg-[#0D0B14] min-h-screen">

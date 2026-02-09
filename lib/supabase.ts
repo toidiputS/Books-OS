@@ -17,10 +17,11 @@ const getEnv = (key: string, fallback: string): string => {
 };
 
 const supabaseUrl = getEnv('VITE_SUPABASE_URL', 'https://dhtpzhnrdjfybugggapp.supabase.co');
+// Using the provided sb_publishable key
 const supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY', 'sb_publishable_7h2vhGBfb_t5gwI3lzdGeA_51YtlQva');
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase URL or Key is missing. Authentication features will not work.');
+if (!supabaseUrl || !supabaseKey || supabaseKey === 'YOUR_SUPABASE_ANON_KEY_HERE') {
+  console.error('CRITICAL: Supabase URL or Anon Key is missing/invalid.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

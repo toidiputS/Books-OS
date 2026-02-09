@@ -1,6 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-orbitron: "Orbitron", sans-serif;
+  --font-rajdhani: "Rajdhani", sans-serif;
+
+  --color-vattles-bg: #0D0B14;
+  --color-vattles-card: #14111F;
+  --color-vattles-purple: #D455F1;
+  --color-vattles-teal: #44E4D3;
+  --color-vattles-yellow: #F0E54D;
+  --color-vattles-blue: #4685E5;
+
+  --shadow-purple: 0 0 20px rgba(192, 132, 252, 0.3);
+  --shadow-teal: 0 0 20px rgba(68, 228, 211, 0.3);
+}
 
 /* Vattles Base Styles */
 :root {
