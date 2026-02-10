@@ -15,88 +15,25 @@
     <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Cinzel:wght@400;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              paper: '#fdfaf1',
-              ink: '#2d2926',
-              'ink-light': '#5a544f',
-              'surface-dark': '#1a1817',
-              wood: '#5c4033',
-            },
-            fontFamily: {
-              serif: ['"EB Garamond"', 'serif'],
-              display: ['"Cinzel"', 'serif'],
-              sans: ['"Inter"', 'sans-serif'],
-            },
-            screens: {
-              'xs': '480px',
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.5s ease-out',
-            },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      .paper-texture {
-        background-color: #fdfaf1;
-        background-image: url("https://www.transparenttextures.com/patterns/sandpaper.png");
-        background-blend-mode: multiply;
-      }
-      .gutter-shadow {
-        background: linear-gradient(to right,
-          rgba(0,0,0,0) 0%,
-          rgba(0,0,0,0.05) 35%,
-          rgba(0,0,0,0.15) 50%,
-          rgba(0,0,0,0.05) 65%,
-          rgba(0,0,0,0) 100%);
-      }
-      .page-curl-left {
-        box-shadow: inset -15px 0 30px -15px rgba(0,0,0,0.1);
-      }
-      .page-curl-right {
-        box-shadow: inset 15px 0 30px -15px rgba(0,0,0,0.1);
-      }
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 0px;
-      }
-      .custom-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    </style>
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
     "three": "https://esm.sh/three@0.169.0",
     "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.17.10?external=react,react-dom,three",
     "@react-three/drei": "https://esm.sh/@react-three/drei@9.117.3?external=react,react-dom,three,@react-three/fiber",
-    "zustand": "https://esm.sh/zustand@4.5.2",
-    "zustand/middleware": "https://esm.sh/zustand@4.5.2/middleware",
+    "zustand": "https://esm.sh/zustand@5.0.1",
+    "zustand/middleware": "https://esm.sh/zustand@5.0.1/middleware",
     "zod": "https://esm.sh/zod@3.23.8",
-    "uuid": "https://esm.sh/uuid@9.0.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "zustand/": "https://esm.sh/zustand@^5.0.9/"
+    "uuid": "https://esm.sh/uuid@9.0.1"
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="stylesheet" href="/index.css">
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
