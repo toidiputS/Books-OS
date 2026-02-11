@@ -5,30 +5,6 @@ import { useUI } from '../../stores/ui';
 import { useSystem } from '../../stores/system';
 import { useLibrary } from '../../stores/library';
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      group: any;
-      mesh: any;
-      meshStandardMaterial: any;
-      meshBasicMaterial: any;
-      boxGeometry: any;
-      planeGeometry: any;
-      cylinderGeometry: any;
-      coneGeometry: any;
-      sphereGeometry: any;
-      circleGeometry: any;
-      ringGeometry: any;
-      torusGeometry: any;
-      ambientLight: any;
-      pointLight: any;
-      hemisphereLight: any;
-      fog: any;
-      color: any;
-      gridHelper: any;
-    }
-  }
-}
 
 export function Desk() {
   const setSettingsOpen = useUI((s) => s.setSettingsOpen);
@@ -39,17 +15,17 @@ export function Desk() {
 
   // Toggle Logic: Cycle 0.0 (Off) -> 1.0 (Mid) -> 2.0 (Bright) -> 0.0
   const toggleGlobalLights = (e: any) => {
-      e.stopPropagation();
-      let newLevel = 0.0;
-      if (lightingLevel < 0.5) newLevel = 1.0;       // Off -> Mid
-      else if (lightingLevel < 1.5) newLevel = 2.0;  // Mid -> Bright
-      else newLevel = 0.0;                           // Bright -> Off
-      setLightingLevel(newLevel);
+    e.stopPropagation();
+    let newLevel = 0.0;
+    if (lightingLevel < 0.5) newLevel = 1.0;       // Off -> Mid
+    else if (lightingLevel < 1.5) newLevel = 2.0;  // Mid -> Bright
+    else newLevel = 0.0;                           // Bright -> Off
+    setLightingLevel(newLevel);
   };
 
   const openAuth = (e: any) => {
-      e.stopPropagation();
-      window.dispatchEvent(new Event('open-auth'));
+    e.stopPropagation();
+    window.dispatchEvent(new Event('open-auth'));
   };
 
   // Lamp Visuals based on State
@@ -67,16 +43,16 @@ export function Desk() {
 
       {/* Legs */}
       {[[-2.5, -1], [2.5, -1], [-2.5, 1], [2.5, 1]].map((pos, i) => (
-         <mesh key={i} position={[pos[0], 0.7, pos[1]]} castShadow>
-            <boxGeometry args={[0.2, 1.4, 0.2]} />
-            <meshStandardMaterial color="#050505" metalness={0.8} />
-         </mesh>
+        <mesh key={i} position={[pos[0], 0.7, pos[1]]} castShadow>
+          <boxGeometry args={[0.2, 1.4, 0.2]} />
+          <meshStandardMaterial color="#050505" metalness={0.8} />
+        </mesh>
       ))}
 
       {/* Nameplate */}
       <group position={[0, 1.5, 1.0]} rotation={[-0.2, 0, 0]} onClick={openAuth}
-             onPointerOver={() => document.body.style.cursor = 'pointer'}
-             onPointerOut={() => document.body.style.cursor = 'auto'}
+        onPointerOver={() => document.body.style.cursor = 'pointer'}
+        onPointerOut={() => document.body.style.cursor = 'auto'}
       >
         <mesh castShadow>
           <boxGeometry args={[1.6, 0.4, 0.1]} />
@@ -90,19 +66,19 @@ export function Desk() {
             anchorY="middle"
           >
             {libraryCardName ? libraryCardName.toUpperCase() : "LOGIN"}
-            <meshStandardMaterial 
-                color="#00FF00" 
-                emissive="#00FF00" 
-                emissiveIntensity={2.0} 
-                toneMapped={false}
+            <meshStandardMaterial
+              color="#00FF00"
+              emissive="#00FF00"
+              emissiveIntensity={2.0}
+              toneMapped={false}
             />
           </Text>
         </Suspense>
       </group>
 
       {/* Settings Panel */}
-      <group 
-        position={[-2.0, 1.55, 0.5]} 
+      <group
+        position={[-2.0, 1.55, 0.5]}
         rotation={[0, 0.3, 0]}
         onClick={(e) => { e.stopPropagation(); setSettingsOpen(true); }}
         onPointerOver={() => { document.body.style.cursor = 'pointer'; setHover(true); }}
@@ -127,57 +103,57 @@ export function Desk() {
 
       {/* THE LAMP */}
       <group position={[2, 0, 0]}>
-          {/* Base - The Switch */}
-          <group
-            onClick={toggleGlobalLights}
-            onPointerOver={() => { document.body.style.cursor = 'pointer'; setLampHover(true); }}
-            onPointerOut={() => { document.body.style.cursor = 'auto'; setLampHover(false); }}
-          >
-            <mesh position={[0, 1.55, 0.5]} castShadow>
-                <cylinderGeometry args={[0.2, 0.25, 0.1]} />
-                <meshStandardMaterial color="#1a1a1a" metalness={0.5} emissive={lampHover ? "#444" : "#000"} />
+        {/* Base - The Switch */}
+        <group
+          onClick={toggleGlobalLights}
+          onPointerOver={() => { document.body.style.cursor = 'pointer'; setLampHover(true); }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; setLampHover(false); }}
+        >
+          <mesh position={[0, 1.55, 0.5]} castShadow>
+            <cylinderGeometry args={[0.2, 0.25, 0.1]} />
+            <meshStandardMaterial color="#1a1a1a" metalness={0.5} emissive={lampHover ? "#444" : "#000"} />
+          </mesh>
+          {/* Click hint */}
+          {lampHover && (
+            <mesh position={[0, 1.61, 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.15, 0.18, 32]} />
+              <meshBasicMaterial color={isBulbOn ? "#ff0000" : "#00ff00"} />
             </mesh>
-            {/* Click hint */}
-             {lampHover && (
-                 <mesh position={[0, 1.61, 0.5]} rotation={[-Math.PI/2, 0, 0]}>
-                     <ringGeometry args={[0.15, 0.18, 32]} />
-                     <meshBasicMaterial color={isBulbOn ? "#ff0000" : "#00ff00"} />
-                 </mesh>
-             )}
-          </group>
-          
-          <mesh position={[0, 2.2, 0.5]} castShadow>
-            <cylinderGeometry args={[0.03, 0.03, 1.4]} />
-            <meshStandardMaterial color="#d4af37" metalness={1.0} roughness={0.2} />
-          </mesh>
-          
-          {/* Lampshade - ALWAYS ON (Emissive) */}
-          <mesh position={[0, 2.8, 0.5]} castShadow>
-            <coneGeometry args={[0.6, 0.4, 32, 1, true]} />
-            <meshStandardMaterial 
-                color="#0f3d0f" 
-                emissive="#0f3d0f"
-                emissiveIntensity={2.0} // ALWAYS ON
-                side={2} 
-                metalness={0.2} 
-                roughness={0.1} 
-            />
-          </mesh>
+          )}
+        </group>
 
-          {/* BULB */}
-          <mesh position={[0, 2.7, 0.5]}>
-              <sphereGeometry args={[0.15, 16, 16]} />
-              <meshBasicMaterial color={bulbColor} toneMapped={false} />
-          </mesh>
+        <mesh position={[0, 2.2, 0.5]} castShadow>
+          <cylinderGeometry args={[0.03, 0.03, 1.4]} />
+          <meshStandardMaterial color="#d4af37" metalness={1.0} roughness={0.2} />
+        </mesh>
 
-          {/* Local Light for Desk */}
-          <pointLight 
-            position={[0, 2.6, 0.5]} 
-            intensity={isBulbOn ? 5.0 : 0.0} 
-            color="#ffaa00" 
-            distance={15} 
-            decay={2} 
+        {/* Lampshade - ALWAYS ON (Emissive) */}
+        <mesh position={[0, 2.8, 0.5]} castShadow>
+          <coneGeometry args={[0.6, 0.4, 32, 1, true]} />
+          <meshStandardMaterial
+            color="#0f3d0f"
+            emissive="#0f3d0f"
+            emissiveIntensity={2.0} // ALWAYS ON
+            side={2}
+            metalness={0.2}
+            roughness={0.1}
           />
+        </mesh>
+
+        {/* BULB */}
+        <mesh position={[0, 2.7, 0.5]}>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshBasicMaterial color={bulbColor} toneMapped={false} />
+        </mesh>
+
+        {/* Local Light for Desk */}
+        <pointLight
+          position={[0, 2.6, 0.5]}
+          intensity={isBulbOn ? 5.0 : 0.0}
+          color="#ffaa00"
+          distance={15}
+          decay={2}
+        />
       </group>
     </group>
   );
