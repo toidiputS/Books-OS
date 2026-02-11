@@ -88,6 +88,6 @@ Whether you're exploring the 20-level vertical stacks or interacting with the "S
     Built for the next generation of knowledge workers.
   </p>
   <p align="center">
-    <strong>COPYRIGHT 2024 BOOKS OS • IT'S YOU ONLINE</strong>
+    <strong>COPYRIGHT 2024 BOOKS OS • IT'S LLC</strong>
   </p>
 </div>
