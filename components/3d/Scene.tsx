@@ -490,9 +490,12 @@ function ObsidianFloor() {
             <planeGeometry args={[1000, 1000]} />
             <meshStandardMaterial
                 map={texture}
-                roughness={0.0}
-                metalness={0.2}
-                envMapIntensity={0.8}
+                emissiveMap={texture}
+                emissive="#D4AF37"
+                emissiveIntensity={0.25}
+                roughness={0.1}
+                metalness={0.5}
+                envMapIntensity={0.5}
             />
         </mesh>
     );
@@ -697,10 +700,6 @@ export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
             {/* Obsidian Floor with Gold Veins */}
             <ObsidianFloor />
 
-            {/* Y-A Logo on floor */}
-            <Suspense fallback={null}>
-                <FloorLogo />
-            </Suspense>
 
             <Suspense fallback={null}>
                 <Environment preset="warehouse" environmentIntensity={envIntensity} />
