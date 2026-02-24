@@ -40,7 +40,7 @@ declare global {
 // --- COMPONENTS ---
 
 const MobileControls = () => {
-    const { keys } = useSystem();
+    const keys = useSystem(s => s.keys);
     const intervalRef = useRef<number | null>(null);
 
     const triggerKey = (code: string, active: boolean) => {
@@ -209,8 +209,13 @@ const KeyBindButton = ({ action, label, currentKey, listening, onClick }: any) =
 };
 
 const SettingsMenu = () => {
-    const { isSettingsOpen, setSettingsOpen } = useUI();
-    const { cameraSpeed, setCameraSpeed, keys, setKey, resetKeys } = useSystem();
+    const isSettingsOpen = useUI(s => s.isSettingsOpen);
+    const setSettingsOpen = useUI(s => s.setSettingsOpen);
+    const cameraSpeed = useSystem(s => s.cameraSpeed);
+    const setCameraSpeed = useSystem(s => s.setCameraSpeed);
+    const keys = useSystem(s => s.keys);
+    const setKey = useSystem(s => s.setKey);
+    const resetKeys = useSystem(s => s.resetKeys);
     const clearLibrary = useLibrary((s) => s.clearLibrary);
     const [listening, setListening] = useState<keyof KeyMap | null>(null);
 

@@ -8,7 +8,7 @@ import { BookSpine3D } from './BookSpine3D';
 import { useLibrary, TOWER_DEFS } from '../../stores/library';
 import { useUI } from '../../stores/ui';
 import { useSystem } from '../../stores/system';
-import { BakeShadows, PerspectiveCamera, PointerLockControls, Text, Environment } from '@react-three/drei';
+import { BakeShadows, PerspectiveCamera, PointerLockControls, Text, Environment, useTexture } from '@react-three/drei';
 import type { BookLite, Shelf as LibraryShelf } from '../../stores/library';
 import { useShallow } from 'zustand/react/shallow';
 import * as THREE from 'three';
@@ -132,6 +132,9 @@ function VortexManager() {
     const setBookState = useLibrary(s => s.setBookState);
     const books = useLibrary(s => s.books);
 
+    // Auto-return timers (local ref, not in store)
+    const flyingTimers = useRef<Record<string, number>>({});
+
     // Physics state for floating books
     const physicsRefs = useRef<Record<string, {
         mesh: THREE.Group,
@@ -147,6 +150,17 @@ function VortexManager() {
         const t = state.clock.getElapsedTime();
 
         flyingIds.forEach(id => {
+            // Auto-return timer: assign on first sight, check expiration
+            if (!flyingTimers.current[id]) {
+                flyingTimers.current[id] = now + 20000 + Math.random() * 10000;
+            }
+            if (now > flyingTimers.current[id]) {
+                returnBookToShelf(id);
+                delete physicsRefs.current[id];
+                delete flyingTimers.current[id];
+                return;
+            }
+
             // Ensure physics object exists (safety for late mounting)
             if (!physicsRefs.current[id]) {
                 return;
@@ -308,9 +322,14 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
             if (k === keys.down) moveState.current.down = down;
             if (k === keys.run) moveState.current.run = down;
         };
-        window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListener('keyup', (e) => onKey(e, false));
-        return () => { };
+        const onKeyDown = (e: KeyboardEvent) => onKey(e, true);
+        const onKeyUp = (e: KeyboardEvent) => onKey(e, false);
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        return () => {
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keyup', onKeyUp);
+        };
     }, [keys]);
 
     useEffect(() => {
@@ -396,6 +415,158 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
     });
 
     return (view === 'stacks' && !isMobile && !isOverlayOpen) ? <PointerLockControls /> : null;
+}
+
+// ── Procedural Walnut Wood Floor ──
+function createWalnutTexture(): THREE.CanvasTexture {
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+
+    // Base walnut color — warm dark brown
+    ctx.fillStyle = '#1E110A';
+    ctx.fillRect(0, 0, size, size);
+
+    // Wood grain — flowing horizontal lines with wave
+    for (let i = 0; i < 120; i++) {
+        const y = (i / 120) * size;
+        const darkness = 0.3 + Math.random() * 0.5;
+        const width = 1 + Math.random() * 3;
+
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(5, 2, 1, ${darkness})`;
+        ctx.lineWidth = width;
+
+        for (let x = 0; x < size; x += 4) {
+            const wave = Math.sin(x * 0.008 + i * 0.7) * 6 +
+                Math.sin(x * 0.02 + i * 1.3) * 3 +
+                Math.sin(x * 0.004) * 12;
+            if (x === 0) ctx.moveTo(x, y + wave);
+            else ctx.lineTo(x, y + wave);
+        }
+        ctx.stroke();
+    }
+
+    // Lighter grain highlights
+    for (let i = 0; i < 40; i++) {
+        const y = Math.random() * size;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(50, 28, 12, ${0.15 + Math.random() * 0.2})`;
+        ctx.lineWidth = 0.5 + Math.random() * 1.5;
+
+        for (let x = 0; x < size; x += 4) {
+            const wave = Math.sin(x * 0.006 + i * 2) * 8 +
+                Math.sin(x * 0.015 + i) * 4;
+            if (x === 0) ctx.moveTo(x, y + wave);
+            else ctx.lineTo(x, y + wave);
+        }
+        ctx.stroke();
+    }
+
+    // Occasional knots — darker ellipses
+    for (let k = 0; k < 8; k++) {
+        const kx = Math.random() * size;
+        const ky = Math.random() * size;
+        const kr = 10 + Math.random() * 20;
+
+        const grad = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+        grad.addColorStop(0, 'rgba(5, 2, 0, 0.9)');
+        grad.addColorStop(0.5, 'rgba(10, 4, 1, 0.6)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(kx, ky, kr, kr * 0.6, Math.random() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ring lines around knot
+        for (let ring = 0; ring < 6; ring++) {
+            const rr = kr + ring * 4 + Math.random() * 3;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(8, 3, 1, ${0.15 + Math.random() * 0.2})`;
+            ctx.lineWidth = 0.5;
+            ctx.ellipse(kx, ky, rr, rr * 0.5, Math.random() * 0.3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    // Fine detail grain
+    for (let d = 0; d < 200; d++) {
+        const dy = Math.random() * size;
+        const dx = Math.random() * size;
+        const dlen = 30 + Math.random() * 80;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(30, 15, 5, ${0.08 + Math.random() * 0.12})`;
+        ctx.lineWidth = 0.3 + Math.random() * 0.5;
+        ctx.moveTo(dx, dy);
+        ctx.lineTo(dx + dlen, dy + (Math.random() - 0.5) * 6);
+        ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(8, 8);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+}
+
+const walnutTextureCache = { tex: null as THREE.CanvasTexture | null };
+function getWalnutTexture() {
+    if (!walnutTextureCache.tex) walnutTextureCache.tex = createWalnutTexture();
+    return walnutTextureCache.tex;
+}
+
+function WalnutFloor() {
+    const texture = useMemo(() => getWalnutTexture(), []);
+    return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]} receiveShadow>
+            <circleGeometry args={[80, 64]} />
+            <meshStandardMaterial
+                map={texture}
+                roughness={0.65}
+                metalness={0.08}
+                color="#2a1a10"
+            />
+        </mesh>
+    );
+}
+
+function FloorLogo() {
+    // SVG files are unreliable with Three.js TextureLoader — use an error boundary approach
+    const [texture, setTexture] = useState<THREE.Texture | null>(null);
+    useEffect(() => {
+        const loader = new THREE.TextureLoader();
+        loader.load(
+            '/assets/y-a-logo.svg',
+            (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                setTexture(tex);
+            },
+            undefined,
+            () => {
+                console.warn('[FloorLogo] Failed to load logo texture, skipping.');
+            }
+        );
+    }, []);
+
+    if (!texture) return null;
+
+    return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.48, 0]}>
+            <planeGeometry args={[12, 12]} />
+            <meshStandardMaterial
+                map={texture}
+                transparent
+                opacity={0.35}
+                roughness={0.7}
+                metalness={0.1}
+                depthWrite={false}
+            />
+        </mesh>
+    );
 }
 
 function MainContent() {
@@ -559,14 +730,13 @@ export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
             <pointLight position={[0, 80, 0]} intensity={mainLightIntensity} color="#fffaf0" distance={200} decay={1} />
             <pointLight position={[0, 15, 0]} intensity={pillarLightIntensity} color="#fffaf0" distance={40} decay={2} />
 
-            {/* Dark wood floor */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]} receiveShadow>
-                <circleGeometry args={[80, 64]} />
-                <meshStandardMaterial color="#1a0f0a" roughness={0.8} metalness={0.05} />
-            </mesh>
+            {/* Walnut Wood Floor */}
+            <WalnutFloor />
 
-            {/* Subtle grid — very faint */}
-            <gridHelper position={[0, -2.4, 0]} args={[50, 50, '#1a1510', '#0d0a07']} />
+            {/* Y-A Logo on floor */}
+            <Suspense fallback={null}>
+                <FloorLogo />
+            </Suspense>
 
             <Suspense fallback={null}>
                 <Environment preset="warehouse" environmentIntensity={envIntensity} />

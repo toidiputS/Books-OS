@@ -1,6 +1,6 @@
 
 import React, { Suspense, useState } from 'react';
-import { RoundedBox, Text } from '@react-three/drei';
+import { RoundedBox, Text, useTexture } from '@react-three/drei';
 import { useLibrary } from '../../stores/library';
 import * as THREE from 'three';
 
@@ -125,9 +125,12 @@ export function Desk() {
               />
             </mesh>
 
+            {/* Logo emblem on book cover */}
+            <LogoEmblem />
+
             {/* Subtitle */}
             <Text
-              position={[0, 0.1, 0.2]}
+              position={[0, 0.1, 0.28]}
               rotation={[-Math.PI / 2, 0, 0]}
               fontSize={0.04}
               anchorX="center"
@@ -194,5 +197,23 @@ export function Desk() {
 
       </group>
     </group>
+  );
+}
+
+// Logo emblem rendered on the Youniverse book cover
+function LogoEmblem() {
+  const texture = useTexture('/icon-192.png');
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return (
+    <mesh position={[0, 0.101, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[0.06, 32]} />
+      <meshStandardMaterial
+        map={texture}
+        transparent
+        emissive="#D4AF37"
+        emissiveIntensity={0.3}
+        toneMapped={false}
+      />
+    </mesh>
   );
 }

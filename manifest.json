@@ -1,6 +1,7 @@
 {
-  "name": "Books OS",
-  "short_name": "BooksOS",
+  "name": "Books OS — The Younique Archive",
+  "short_name": "Books OS",
+  "description": "Your living 3D spatial archive. No Hero. No Guru. Just a New You.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#000000",
@@ -8,9 +9,22 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/logo.svg",
       "type": "image/svg+xml",
-      "sizes": "512x512"
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ]
 }
