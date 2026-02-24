@@ -159,7 +159,8 @@ function VortexManager() {
         flyingIds.forEach(id => {
             // Auto-return timer: assign on first sight, check expiration
             if (!flyingTimers.current[id]) {
-                flyingTimers.current[id] = now + 20000 + Math.random() * 10000;
+                // Auto-return between 45 and 60 seconds
+                flyingTimers.current[id] = now + 45000 + Math.random() * 15000;
             }
             if (now > flyingTimers.current[id]) {
                 returnBookToShelf(id);
