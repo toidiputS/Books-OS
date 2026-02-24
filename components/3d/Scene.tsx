@@ -32,6 +32,7 @@ function ExitSign() {
             onPointerOver={() => { document.body.style.cursor = 'pointer'; setHover(true); }}
             onPointerOut={() => { document.body.style.cursor = 'auto'; setHover(false); }}
         >
+            {/* Red torus ring */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
                 <torusGeometry args={[18, 0.5, 16, 100]} />
                 <meshStandardMaterial
@@ -41,18 +42,24 @@ function ExitSign() {
                     toneMapped={false}
                 />
             </mesh>
+            {/* EXIT text flat inside the circle */}
             <Suspense fallback={null}>
-                <group rotation={[-Math.PI / 2, 0, 0]}>
-                    <Text
-                        fontSize={8}
-                        anchorX="center"
-                        anchorY="middle"
+                <Text
+                    position={[0, 0, 0]}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    fontSize={12}
+                    anchorX="center"
+                    anchorY="middle"
+                    letterSpacing={0.3}
+                >
+                    EXIT
+                    <meshStandardMaterial
                         color="#ff0000"
-                    >
-                        EXIT SYSTEM
-                        <meshBasicMaterial color="#ff0000" toneMapped={false} />
-                    </Text>
-                </group>
+                        emissive="#ff0000"
+                        emissiveIntensity={hovered ? 6 : 3}
+                        toneMapped={false}
+                    />
+                </Text>
             </Suspense>
             {/* Invisible Hitbox */}
             <mesh visible={false}>
@@ -556,7 +563,7 @@ function FloorLogo() {
 
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.48, 0]}>
-            <planeGeometry args={[12, 12]} />
+            <planeGeometry args={[30, 30]} />
             <meshStandardMaterial
                 map={texture}
                 transparent
@@ -623,7 +630,7 @@ function MainContent() {
                 let shelfId: string;
                 let label: string;
 
-                if (tower.key === 'MYTHOLOGY' || tower.key === 'BEFORE') {
+                if (tower.key === 'NEXUS' || tower.key === 'BEFORE') {
                     shelfId = `TOWER-${tower.key}-SHELF-${lvl}`;
                     label = `SHELF ${level + 1}`;
                 } else {

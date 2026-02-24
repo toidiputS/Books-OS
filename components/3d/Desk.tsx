@@ -1,6 +1,6 @@
 
-import React, { Suspense, useState } from 'react';
-import { RoundedBox, Text, useTexture } from '@react-three/drei';
+import React, { Suspense, useState, useEffect } from 'react';
+import { RoundedBox, Text } from '@react-three/drei';
 import { useLibrary } from '../../stores/library';
 import * as THREE from 'three';
 
@@ -202,8 +202,22 @@ export function Desk() {
 
 // Logo emblem rendered on the Youniverse book cover
 function LogoEmblem() {
-  const texture = useTexture('/icon-192.png');
-  texture.colorSpace = THREE.SRGBColorSpace;
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      '/assets/icon-192.png',
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        setTexture(tex);
+      },
+      undefined,
+      () => console.warn('[LogoEmblem] Failed to load icon texture, skipping.')
+    );
+  }, []);
+
+  if (!texture) return null;
+
   return (
     <mesh position={[0, 0.101, 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
       <circleGeometry args={[0.06, 32]} />

@@ -202,7 +202,7 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
         </mesh>
 
         {/* === GOLD FOIL STRIP — vertical accent on spine front === */}
-        {!isEmpty && !isLocked && (
+        {!isEmpty && (
           <>
             {/* Vertical gold strip — left edge of front face */}
             <mesh position={[-(thickness / 2) + 0.015, 0, depth / 2 + 0.001]}>
@@ -244,12 +244,12 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
             >
               {spineLetter}
               <meshStandardMaterial
-                color={isLocked ? '#333333' : '#1a0f0a'}
-                metalness={isLocked ? 0.1 : 0.3}
-                roughness={isLocked ? 0.8 : 0.6}
-                emissive={isLocked ? '#111111' : '#1a0f0a'}
-                emissiveIntensity={isLocked ? 0.05 : 0.3}
-                envMapIntensity={isLocked ? 0.2 : 1.0}
+                color={'#FFD700'}
+                metalness={0.9}
+                roughness={0.15}
+                emissive={'#D4AF37'}
+                emissiveIntensity={isLocked ? 0.5 : 1.5}
+                envMapIntensity={1.0}
                 toneMapped={false}
               />
             </Text>

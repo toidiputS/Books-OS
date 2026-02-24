@@ -43,7 +43,7 @@ export const TOWER_DEFS = [
   { key: 'OCT', label: 'October', subtitle: 'The Turn', index: 10 },
   { key: 'NOV', label: 'November', subtitle: 'The Forge', index: 11 },
   { key: 'DEC', label: 'December', subtitle: 'The Close', index: 12 },
-  { key: 'MYTHOLOGY', label: 'The Mythology', subtitle: 'The Living Record', index: 13 },
+  { key: 'NEXUS', label: 'The Nexus', subtitle: 'The Tool Archive', index: 13 },
   { key: 'BEFORE', label: 'The Before', subtitle: 'The Origin', index: 14 },
 ] as const;
 
@@ -105,7 +105,7 @@ type LibraryState = {
 
 function makeShelfId(towerKey: string, level: number): string {
   const lvl = level.toString().padStart(2, '0');
-  if (towerKey === 'MYTHOLOGY' || towerKey === 'BEFORE') {
+  if (towerKey === 'NEXUS' || towerKey === 'BEFORE') {
     return `TOWER-${towerKey}-SHELF-${lvl}`;
   }
   const year = BASE_YEAR + (level - 1);
@@ -115,7 +115,7 @@ function makeShelfId(towerKey: string, level: number): string {
 function makeShelfTitle(towerKey: string, level: number): string {
   const tower = TOWER_DEFS.find(t => t.key === towerKey);
   if (!tower) return `Shelf ${level}`;
-  if (towerKey === 'MYTHOLOGY') return `The Mythology — Shelf ${level}`;
+  if (towerKey === 'NEXUS') return `The Nexus — Shelf ${level}`;
   if (towerKey === 'BEFORE') return `The Before — Shelf ${level}`;
   const year = BASE_YEAR + (level - 1);
   return `${tower.label} ${year}`;
@@ -173,10 +173,10 @@ export const useLibrary = create<LibraryState>()(
               let summary: string;
               let spineColor: string;
 
-              if (tower.key === 'MYTHOLOGY') {
+              if (tower.key === 'NEXUS') {
                 title = `${tower.label} • Shelf ${level} • Book ${letter}`;
                 summary = tower.subtitle;
-                spineColor = '#B8860B'; // Rich gold for Mythology
+                spineColor = '#B8860B'; // Rich gold for Nexus
               } else if (tower.key === 'BEFORE') {
                 title = `${tower.label} • Shelf ${level} • Book ${letter}`;
                 summary = tower.subtitle;
@@ -209,7 +209,7 @@ export const useLibrary = create<LibraryState>()(
         // Auto-unlock: February tower first shelf + Mythology first shelf
         const unlocked: Record<string, boolean> = { ...s.unlockedShelves };
         unlocked[makeShelfId('FEB', 1)] = true;
-        unlocked[makeShelfId('MYTHOLOGY', 1)] = true;
+        unlocked[makeShelfId('NEXUS', 1)] = true;
 
         return {
           books: newBooks,

@@ -9,6 +9,7 @@ import { LandingPage } from './components/ui/LandingPage';
 import { BookOpenOverlay } from './components/ui/BookOpenOverlay';
 import { initArchiveReceiver } from './stores/archiveReceiver';
 import { ArchiveToast, showToast } from './components/ui/ArchiveToast';
+import { supabase } from './services/supabase';
 
 declare global {
     namespace JSX {
@@ -221,12 +222,18 @@ const SettingsMenu = () => {
 
     if (!isSettingsOpen) return null;
 
-    const handleReset = () => {
+    const handleReset = async () => {
         if (confirm("WARNING: COMPLETE SYSTEM PURGE. PROCEED?")) {
+            await supabase.auth.signOut();
             clearLibrary();
-            // Force reload to trigger re-seeding
             window.location.reload();
         }
+    };
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        useSystem.getState().logout();
+        window.location.reload();
     };
 
     const onKeyDown = (e: React.KeyboardEvent) => {
@@ -296,6 +303,12 @@ const SettingsMenu = () => {
 
                             <div className="space-y-6">
                                 <h3 className="text-xs font-mono text-red-900 uppercase border-b border-red-900/30 pb-2">Danger Zone</h3>
+                                <button
+                                    onClick={handleSignOut}
+                                    className="w-full py-4 border border-amber-900/50 bg-amber-950/10 text-amber-700 font-mono text-xs uppercase tracking-[0.3em] hover:bg-amber-900/30 hover:text-amber-500 transition-all flex items-center justify-center gap-4"
+                                >
+                                    Sign Out
+                                </button>
                                 <button
                                     onClick={handleReset}
                                     className="w-full py-6 border border-red-900/50 bg-red-950/10 text-red-700 font-mono text-xs uppercase tracking-[0.3em] hover:bg-red-900/30 hover:text-red-500 transition-all flex items-center justify-center gap-4 group"
@@ -368,6 +381,7 @@ export default function App() {
     const isAuthenticated = useSystem(s => s.user.isAuthenticated);
     const user = useSystem(s => s.user); // Keep for legacy if needed, but use discrete where possible
     const [isMobile, setIsMobile] = useState(false);
+    const [showControls, setShowControls] = useState(true);
 
     // World loading state removed - we now load immediately in background
 
@@ -419,6 +433,59 @@ export default function App() {
 
     useEffect(() => {
         const t = setTimeout(() => {
+            const state = useLibrary.getState();
+            const shelves = state.shelves;
+            const books = state.books;
+            const bookStatesMap = state.bookStates;
+            const unlocked = state.unlockedShelves;
+
+            // --- Migration: MYTHOLOGY → NEXUS ---
+            const mythKeys = Object.keys(shelves).filter(k => k.startsWith('TOWER-MYTHOLOGY-'));
+            if (mythKeys.length > 0) {
+                console.log(`Migrating ${mythKeys.length} MYTHOLOGY shelves → NEXUS...`);
+                const newShelves = { ...shelves };
+                const newBooks = { ...books };
+                const newStates = { ...bookStatesMap };
+                const newUnlocked = { ...unlocked };
+
+                for (const oldShelfId of mythKeys) {
+                    const newShelfId = oldShelfId.replace('TOWER-MYTHOLOGY-', 'TOWER-NEXUS-');
+                    const shelf = newShelves[oldShelfId];
+                    const newBookIds: string[] = [];
+
+                    for (const oldBookId of shelf.bookIds) {
+                        const newBookId = oldBookId.replace('TOWER-MYTHOLOGY-', 'TOWER-NEXUS-');
+                        newBooks[newBookId] = { ...newBooks[oldBookId], id: newBookId };
+                        newStates[newBookId] = newStates[oldBookId] || 'shelf';
+                        delete newBooks[oldBookId];
+                        delete newStates[oldBookId];
+                        newBookIds.push(newBookId);
+                    }
+
+                    newShelves[newShelfId] = {
+                        ...shelf,
+                        id: newShelfId,
+                        title: shelf.title.replace('The Mythology', 'The Nexus'),
+                        bookIds: newBookIds,
+                    };
+                    delete newShelves[oldShelfId];
+
+                    if (newUnlocked[oldShelfId]) {
+                        newUnlocked[newShelfId] = true;
+                        delete newUnlocked[oldShelfId];
+                    }
+                }
+
+                useLibrary.setState({
+                    shelves: newShelves,
+                    books: newBooks,
+                    bookStates: newStates,
+                    unlockedShelves: newUnlocked,
+                });
+                console.log('Migration complete.');
+            }
+
+            // --- Topology check ---
             const count = Object.keys(useLibrary.getState().shelves).length;
             const TARGET_SHELVES = 420; // 14 towers × 30 shelves
 
@@ -435,6 +502,36 @@ export default function App() {
     useEffect(() => {
         const cleanup = initArchiveReceiver((msg) => showToast(msg));
         return cleanup;
+    }, []);
+
+    // Supabase auth state — auto-restore session on load
+    useEffect(() => {
+        // Check existing session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                const displayName = session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User';
+                const userEmail = session.user.email || '';
+                const sys = useSystem.getState();
+                if (!sys.user.isAuthenticated) {
+                    sys.login(displayName, userEmail);
+                    useLibrary.getState().setLibraryCard(displayName);
+                }
+            }
+        });
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                const displayName = session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User';
+                const userEmail = session.user.email || '';
+                useSystem.getState().login(displayName, userEmail);
+                useLibrary.getState().setLibraryCard(displayName);
+            } else if (event === 'SIGNED_OUT') {
+                useSystem.getState().logout();
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || heldBookOpensOverlay);
@@ -488,16 +585,28 @@ export default function App() {
 
                     {/* Bottom Left: Controls HUD */}
                     {!isMobile && !isCatalogOpen && !isSettingsOpen && !selectedBookId && (
-                        <div className="absolute bottom-8 left-8 text-yellow-500 pointer-events-none hidden md:block">
-                            <div className="text-[10px] font-mono space-y-2 drop-shadow-md">
-                                <p className="text-amber-300 font-bold border-b border-amber-800 pb-1 mb-2">CONTROLS_V1.3</p>
-                                <p>CLICK SCREEN : LOCK CURSOR</p>
-                                <p>ESC : UNLOCK CURSOR</p>
-                                <p>{keys.forward.replace('Key', '')}{keys.left.replace('Key', '')}{keys.backward.replace('Key', '')}{keys.right.replace('Key', '')} : VECTOR MOVEMENT</p>
-                                <p>HOVER 2s : FLOAT BOOK</p>
-                                <p>{keys.summon} : HOLD / RETURN LAST BOOK</p>
-                                <p>{keys.interact} : OPEN BOOK (REQ. AUTH)</p>
-                            </div>
+                        <div className="absolute bottom-8 left-8 pointer-events-auto hidden md:block">
+                            {showControls ? (
+                                <div className="text-[10px] font-mono space-y-2 drop-shadow-md text-yellow-500">
+                                    <div className="flex justify-between items-center border-b border-amber-800 pb-1 mb-2">
+                                        <p className="text-amber-300 font-bold">CONTROLS_V1.4</p>
+                                        <button onClick={() => setShowControls(false)} className="text-amber-600 hover:text-amber-300 text-[9px] ml-4 transition-colors">HIDE</button>
+                                    </div>
+                                    <p>CLICK SCREEN : LOCK CURSOR</p>
+                                    <p>ESC / MIDDLE CLICK : UNLOCK CURSOR</p>
+                                    <p>{keys.forward.replace('Key', '')}{keys.left.replace('Key', '')}{keys.backward.replace('Key', '')}{keys.right.replace('Key', '')} : VECTOR MOVEMENT</p>
+                                    <p>HOVER 2s : FLOAT BOOK</p>
+                                    <p>{keys.summon} : HOLD / RETURN LAST BOOK</p>
+                                    <p>{keys.interact} : OPEN BOOK (REQ. AUTH)</p>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setShowControls(true)}
+                                    className="bg-black/50 backdrop-blur border border-amber-900/30 hover:border-amber-500 text-amber-600 hover:text-amber-300 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition-all"
+                                >
+                                    ?
+                                </button>
+                            )}
                         </div>
                     )}
 
