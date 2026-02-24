@@ -513,11 +513,12 @@ function FloorLogo() {
             <meshStandardMaterial
                 map={texture}
                 transparent
-                opacity={0.7}
-                emissive="#ffffff"
-                emissiveIntensity={0.15}
-                roughness={0.5}
-                metalness={0.0}
+                opacity={0.8}
+                color="#D4AF37"
+                emissive="#D4AF37"
+                emissiveIntensity={0.4}
+                roughness={0.3}
+                metalness={0.2}
                 depthWrite={false}
                 polygonOffset
                 polygonOffsetFactor={-1}
