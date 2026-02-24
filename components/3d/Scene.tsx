@@ -424,7 +424,7 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
     return (view === 'stacks' && !isMobile && !isOverlayOpen) ? <PointerLockControls /> : null;
 }
 
-// ── Procedural Deep Obsidian Floor with System Grid ──
+// ── Procedural Deep Obsidian Floor ──
 function createObsidianTexture(): THREE.CanvasTexture {
     const size = 1024;
     const canvas = document.createElement('canvas');
@@ -433,46 +433,35 @@ function createObsidianTexture(): THREE.CanvasTexture {
     const ctx = canvas.getContext('2d')!;
 
     // Base color — absolute deep black
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#020202';
     ctx.fillRect(0, 0, size, size);
 
-    // Subtle Grid Lines
-    const gridSize = 128; // Size of each grid square
-    ctx.strokeStyle = '#D4AF37'; // Gold/Amber
-    ctx.lineWidth = 1;
+    // Extremely faint gold veins
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
 
-    // Grid with varying opacity for depth
-    for (let y = 0; y <= size; y += gridSize) {
-        ctx.globalAlpha = 0.02;
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(size, y);
-        ctx.stroke();
-    }
+        const opacity = 0.02 + Math.random() * 0.06;
+        ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
+        ctx.lineWidth = 0.5 + Math.random() * 1.0;
 
-    for (let x = 0; x <= size; x += gridSize) {
-        ctx.globalAlpha = 0.02;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, size);
-        ctx.stroke();
-    }
+        let curX = x;
+        let curY = y;
+        ctx.moveTo(curX, curY);
 
-    // Intersections — tiny glowing points
-    ctx.globalAlpha = 0.1;
-    for (let x = 0; x <= size; x += gridSize) {
-        for (let y = 0; y <= size; y += gridSize) {
-            ctx.beginPath();
-            ctx.arc(x, y, 0.8, 0, Math.PI * 2);
-            ctx.fillStyle = '#D4AF37';
-            ctx.fill();
+        for (let j = 0; j < 15; j++) {
+            curX += (Math.random() - 0.5) * 50;
+            curY += (Math.random() - 0.2) * 30;
+            ctx.lineTo(curX, curY);
         }
+        ctx.stroke();
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(16, 16);
+    texture.repeat.set(8, 8);
     texture.colorSpace = THREE.SRGBColorSpace;
     return texture;
 }
@@ -490,12 +479,9 @@ function ObsidianFloor() {
             <planeGeometry args={[1000, 1000]} />
             <meshStandardMaterial
                 map={texture}
-                emissiveMap={texture}
-                emissive="#D4AF37"
-                emissiveIntensity={0.25}
-                roughness={0.1}
-                metalness={0.5}
-                envMapIntensity={0.5}
+                roughness={0.4}
+                metalness={0.1}
+                envMapIntensity={0.3}
             />
         </mesh>
     );
@@ -697,8 +683,13 @@ export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
             <pointLight position={[0, 80, 0]} intensity={mainLightIntensity} color="#fffaf0" distance={200} decay={1} />
             <pointLight position={[0, 15, 0]} intensity={pillarLightIntensity} color="#fffaf0" distance={40} decay={2} />
 
-            {/* Obsidian Floor with Gold Veins */}
+            {/* Deep Obsidian Floor */}
             <ObsidianFloor />
+
+            {/* Floor Logo Restoration */}
+            <Suspense fallback={null}>
+                <FloorLogo />
+            </Suspense>
 
 
             <Suspense fallback={null}>
