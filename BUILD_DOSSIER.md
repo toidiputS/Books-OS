@@ -8,13 +8,14 @@
 
 ## 1. Executive Summary
 
-**Books OS** is a fully client-side, 3D spatial-knowledge PWA — the **Younique Archive** — rendered with WebGL. The environment is a dark, cathedral-like hall with **14 obsidian towers** arranged in a ring, each rising from a **gold-engraved base** atop a **dark wood floor**. Users navigate using first-person WASD controls (desktop) or on-screen d-pad (mobile).
+**Books OS** is a fully client-side, 3D spatial-knowledge PWA — the **Younique Archive** — rendered with WebGL. The environment is a dark, cathedral-like hall with **14 obsidian towers** arranged in a ring, each rising from a **gold-engraved base** atop a **dark-stained walnut floor**. Users navigate using first-person WASD controls (desktop) or on-screen d-pad (mobile). At the heart of the ring, a large transparent **Y-A Logo** is etched into the wood.
 
 The archive holds **4,200 books** across 14 towers × 30 shelves × 10 books per shelf. At the center of the ring sits a **display pillar** crowned with *"The Youniverse"* — the user's living archive book. Books can be pulled from shelves, floated into a vortex, summoned, and opened to reveal rich chapter-based content overlays.
 
 An **Archive Receiver** system listens for incoming artifacts via `localStorage`, automatically placing content into the correct tower, shelf, and book slot based on timestamp.
 
-**Tagline:** *"No Hero. No Guru. Just a New You."*
+**Tagline:** *"No Hero. No Guru. Just a New You."*  
+**Nickname:** *Master Nexus • Portals OS • The Youniverse*
 
 ---
 
@@ -72,9 +73,9 @@ books-os-v1.1/
 ├── utils/
 │   └── z.ts                ← Shared Zod primitives (zId, zSlug, zUrl, etc.)
 │
-├── public/assets/          ← Static assets
-├── sw.js                   ← Service Worker (cache-first, video bypass)
-├── manifest.json           ← PWA manifest (standalone, black theme)
+├── public/assets/          ← Static assets (logo.svg, y-a-logo.svg, icons)
+├── sw.js                   ← Service Worker (Network-first HTML, cache-first assets)
+├── manifest.json           ← PWA manifest (Stand-alone, custom branding)
 ├── tailwind.config.js      ← Custom colors (paper, ink, wood), fonts, animation
 ├── postcss.config.js       ← PostCSS with Tailwind + Autoprefixer
 ├── vite.config.ts          ← Dev server on :3000, env injection, path aliases
@@ -105,23 +106,23 @@ books-os-v1.1/
 | 2 | FEB | February | The Pulse | 300 |
 | 3 | MAR | March | The Awakening | 300 |
 | 4 | APR | April | The Bloom | 300 |
-| 5 | MAY | May | The Momentum | 300 |
-| 6 | JUN | June | The Zenith | 300 |
-| 7 | JUL | July | The Fire | 300 |
+| 5 | MAY | May | The Expansion | 300 |
+| 6 | JUN | June | The Ascent | 300 |
+| 7 | JUL | July | The Peak | 300 |
 | 8 | AUG | August | The Harvest | 300 |
-| 9 | SEP | September | The Shift | 300 |
-| 10 | OCT | October | The Descent | 300 |
-| 11 | NOV | November | The Reflection | 300 |
-| 12 | DEC | December | The Return | 300 |
-| 13 | MYTHOLOGY | The Mythology | The Living Record | 300 |
+| 9 | SEP | September | The Reflection | 300 |
+| 10 | OCT | October | The Turn | 300 |
+| 11 | NOV | November | The Forge | 300 |
+| 12 | DEC | December | The Close | 300 |
+| 13 | NEXUS | The Nexus | The Tool Archive | 300 |
 | 14 | BEFORE | The Before | The Origin | 300 |
 
 **Total: 14 × 30 × 10 = 4,200 books**
 
 - Monthly towers: Shelves labeled by year (2026–2055)
-- Mythology/Before: Shelves labeled numerically (SHELF 1–30)
-- February shelf 1 + Mythology shelf 1 auto-unlocked on initialization
-- Mythology books: Rich gold `#B8860B`
+- Nexus/Before: Shelves labeled numerically (SHELF 1–30)
+- February shelf 1 + Nexus shelf 1 auto-unlocked on initialization
+- Nexus books: Rich gold `#B8860B`
 - Before books: Deep burgundy `#6B0F1A`
 - Monthly books: Color-coded by slot (dark red, dark green, dark blue, goldenrod)
 
@@ -152,7 +153,7 @@ books-os-v1.1/
 
 | Component | Responsibility |
 |-----------|---------------|
-| **Scene3D** | `<Canvas>` with fog, dark wood floor, lowered lighting, 14-tower ring |
+| **Scene3D** | `<Canvas>` with fog, dark walnut wood floor (+ Y-A logo), lowered lighting, 14-tower ring |
 | **PlayerController** | WASD + pointer lock, touch, wheel zoom, **middle-click to unlock cursor** |
 | **MainContent** | Renders 14 TowerBase blocks + 420 shelves stacked vertically per tower |
 | **TowerBase** | Obsidian block with gold-engraved tower number, label, divider, subtitle |
@@ -160,7 +161,7 @@ books-os-v1.1/
 | **HeldBookManager** | Attaches "held" books to camera position |
 | **BookSpine3D** | Book mesh with leather texture, **gold foil strip**, **bottom trim**, embossed letter |
 | **Shelf** | 10-slot shelf with obsidian board, gold year labels, deterministic RNG layout |
-| **Desk** | Center display pillar + "The Youniverse" book + gold nameplate |
+| **Desk** | Center display pillar + "The Youniverse" book (+ Logo emblem) + gold nameplate |
 
 ### 4.6 Performance Optimizations
 
@@ -192,7 +193,7 @@ books-os-v1.1/
 | Landing Page + Speech Greeting | ✅ Live | Web Speech API |
 | Auth (Library Card) | ✅ Live | Name persisted to localStorage |
 | Settings Menu | ✅ Live | Keybindings, camera speed, lighting, theme, clear data |
-| Service Worker / PWA | ⚠️ Disabled | SW is force-unregistered in index.html |
+| Service Worker / PWA | ✅ Live | Network-first for HTML, custom icons (192, 512, SVG) |
 | Gemini API Integration | 🔲 Placeholder | Key defined but no calls made |
 | Zod Domain Models | ✅ Defined | 5 schema modules, not yet consumed by UI |
 
@@ -203,11 +204,11 @@ books-os-v1.1/
 | Token | Value | Usage |
 |-------|-------|-------|
 | **Background** | `#030303` | Scene background + fog |
-| **Floor** | `#1a0f0a` | Dark wood floor, roughness 0.8 |
+| **Floor** | `#1e110a` | Dark walnut wood with procedural grain, knots, and Y-A Logo |
 | **Tower bases** | `#0a0a0a` | Obsidian blocks, metalness 0.85 |
 | **Shelf boards** | `#0a0a0a` | Obsidian boards, metalness 0.85 |
 | **Gold** | `#D4AF37` | Engravings, labels, accents |
-| **Dark Gold** | `#B8860B` | Subtitles, Mythology book color, foil strips |
+| **Dark Gold** | `#B8860B` | Subtitles, Nexus book color, foil strips |
 | **Book overlay** | `bg: #121212, text: #F5F5DC, accent: #D4AF37` | Dark UI with gold accents |
 | **Pillar** | `#0e0e0e` column, `#0a0a0a` base | Center display |
 | **Ambient light** | `#fff5e6`, warm | Lowered intensity for moody atmosphere |
@@ -220,6 +221,7 @@ books-os-v1.1/
 
 | Commit | Message |
 |--------|---------|
+| `ac4b1f2` | **Final Polish: Dark walnut floor, Y-A floor logo, Youniverse book emblem, PWA icon/SW fixes** |
 | `09b9e63` | **14-Tower Younique Archive: gold accents, middle-click unlock, archive receiver, toast system, premium book spines** |
 | `fbba215` | Update attribution to It's LLC |
 | `f244389` | Add MIT License and update package.json |
@@ -250,10 +252,10 @@ books-os-v1.1/
 | Area | Observation | Severity |
 |------|-------------|----------|
 | **No tests** | Zero test files, no test runner, no CI pipeline | ⚠️ High |
-| **Service Worker** | Defined in sw.js but force-unregistered in index.html | ⚠️ Medium |
+| **Service Worker** | Fully enabled with network-first strategy for index.html | ✅ Fixed |
 | **BookOpenOverlay** | Currently shows placeholder chapters — awaiting archive content | Info |
 | **Archive Receiver** | Ready for NotNotes integration via `younique_archive_commit` key | Info |
 | **Gemini API** | Key placeholder exists but zero calls made | Info |
 | **Zod types** | 5 schema modules defined but never imported by stores/components | ⚠️ Medium |
-| **PWA icon** | Uses default `vite.svg` — no custom branding | Low |
+| **PWA icon** | Custom branding integrated (logo.svg, 192, 512) | ✅ Fixed |
 | **No routing** | Single-page with view state toggle (`desk` / `stacks`) | Info |

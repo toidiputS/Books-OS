@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type Shelf = { id: string; title: string; bookIds: string[] };
+export type Shelf = { id: string; title: string; bookIds: string[]; towerIndex?: number };
 export type BookLite = {
   id: string;
   title: string;
@@ -202,11 +202,11 @@ export const useLibrary = create<LibraryState>()(
               newStates[bookId] = 'shelf';
             }
 
-            newShelves[shelfId] = { id: shelfId, title: shelfTitle, bookIds };
+            newShelves[shelfId] = { id: shelfId, title: shelfTitle, bookIds, towerIndex: TOWER_DEFS.indexOf(tower) };
           }
         }
 
-        // Auto-unlock: February tower first shelf + Mythology first shelf
+        // Auto-unlock: February tower first shelf + Nexus first shelf
         const unlocked: Record<string, boolean> = { ...s.unlockedShelves };
         unlocked[makeShelfId('FEB', 1)] = true;
         unlocked[makeShelfId('NEXUS', 1)] = true;

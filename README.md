@@ -10,7 +10,7 @@
   [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
   **A massive, high-performance 3D spatial knowledge environment.**
-  *240 Shelves. 2,400 Books. Infinite Context.*
+  *14 Towers • 420 Shelves • 4,200 Books • Infinite Context.*
 </div>
 
 ---
@@ -18,18 +18,19 @@
 ## 🌌 The Vision
 **Books OS** is more than a library; it's a spatial operating system for knowledge. Designed with a "No Hero, No Guru, Just a New You" philosophy, it provides an immersive, high-ticket environment for interacting with vast quantities of data, artifacts, and logs.
 
-Whether you're exploring the 20-level vertical stacks or interacting with the "Spec" books (A-J) of **itsaiagent.solutions**, Books OS provides a premium, responsive, and aesthetically driven experience.
+Whether you're exploring the 14 obsidian towers in the 3D ring or interacting with the "Nexus" tools, Books OS provides a premium, responsive, and aesthetically driven experience.
 
 ## ✨ Key Features
 
-- **🏛️ Massive 3D Library Architecture**: Navigate a cylindrical tower featuring 240 distinct shelf sectors and 2,400 interactive books.
+- **🏛️ 14-Tower Younique Archive**: Navigate a cathedral-like hall featuring 14 distinct obsidian towers with 4,200 interactive books.
 - **🌪️ Vortex Dynamics**: Experience an organic "book vortex." Books float, orbit, and tumble through space, responding to user interaction.
-- **📖 Rich Overlays**: Specialized data-driven overlays for canonical books (A-J), featuring specific chapters with complex UI segments (fields, code blocks, stats, and lists).
+- **📖 Rich Content Access**: Specialized data-driven overlays for all books, featuring chapter-based navigation with complex UI segments (fields, code blocks, stats, and lists).
 - **🪪 Identity Protocol**: User authentication via the "Library Card" system, integrated directly into the 3D world at the Master Desk.
 - **🕹️ Hybrid Controls**: 
   - **Desktop**: WASD + Mouse look with Pointer Lock.
   - **Mobile**: Fully responsive on-screen d-pad and action buttons.
-- **⚡ High-Performance Rendering**: Optimized with shared geometries and memoized state selectors to handle thousands of objects at 60fps.
+- **⚡ High-Performance Rendering**: Optimized with shared geometries, walnut wood floor textures, and memoized state selectors to handle 4,200 objects at 60fps.
+- **📱 PWA & Offline Support**: Fully installable as a standalone app with custom icons and service worker caching.
 
 ## 🛠️ Tech Stack
 

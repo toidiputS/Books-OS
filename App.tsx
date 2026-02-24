@@ -11,6 +11,8 @@ import { initArchiveReceiver } from './stores/archiveReceiver';
 import { ArchiveToast, showToast } from './components/ui/ArchiveToast';
 import { supabase } from './services/supabase';
 
+import { MobileControls } from './components/ui/MobileControls';
+
 declare global {
     namespace JSX {
         interface IntrinsicElements {
@@ -39,94 +41,6 @@ declare global {
 }
 
 // --- COMPONENTS ---
-
-const MobileControls = () => {
-    const keys = useSystem(s => s.keys);
-    const intervalRef = useRef<number | null>(null);
-
-    const triggerKey = (code: string, active: boolean) => {
-        const eventType = active ? 'keydown' : 'keyup';
-        window.dispatchEvent(new KeyboardEvent(eventType, { code }));
-    };
-
-    const handleTouchStart = (code: string) => (e: React.TouchEvent) => {
-        e.preventDefault(); // Prevent scroll/zoom
-        triggerKey(code, true);
-    };
-
-    const handleTouchEnd = (code: string) => (e: React.TouchEvent) => {
-        e.preventDefault();
-        triggerKey(code, false);
-    };
-
-    // Style for glass buttons
-    const btnClass = "w-16 h-16 rounded-full bg-neutral-900/50 backdrop-blur-md border border-amber-500/30 active:bg-amber-500/40 active:border-amber-500 flex items-center justify-center text-amber-500/80 font-bold select-none touch-none shadow-lg";
-
-    return (
-        <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-end pb-8 px-6">
-            <div className="flex justify-between items-end w-full pointer-events-auto">
-                {/* D-PAD Area */}
-                <div className="grid grid-cols-3 gap-2">
-                    <div></div>
-                    <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.forward)}
-                        onTouchEnd={handleTouchEnd(keys.forward)}
-                    >▲</button>
-                    <div></div>
-
-                    <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.left)}
-                        onTouchEnd={handleTouchEnd(keys.left)}
-                    >◀</button>
-                    <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.backward)}
-                        onTouchEnd={handleTouchEnd(keys.backward)}
-                    >▼</button>
-                    <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.right)}
-                        onTouchEnd={handleTouchEnd(keys.right)}
-                    >▶</button>
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex flex-col gap-4 items-end">
-                    <button
-                        className={`${btnClass} w-20 h-20 border-amber-400/50 bg-amber-900/20`}
-                        onTouchStart={handleTouchStart(keys.interact)}
-                        onTouchEnd={handleTouchEnd(keys.interact)}
-                    >
-                        OPEN
-                    </button>
-                    <div className="flex gap-4">
-                        <button
-                            className={`${btnClass} w-14 h-14 text-xs`}
-                            onTouchStart={handleTouchStart(keys.up)}
-                            onTouchEnd={handleTouchEnd(keys.up)}
-                        >ASC</button>
-                        <button
-                            className={`${btnClass} w-14 h-14 text-xs`}
-                            onTouchStart={handleTouchStart(keys.down)}
-                            onTouchEnd={handleTouchEnd(keys.down)}
-                        >DSC</button>
-                    </div>
-                    <button
-                        className={`${btnClass} w-12 h-12 text-[10px] opacity-70`}
-                        onTouchStart={handleTouchStart(keys.summon)}
-                        onTouchEnd={handleTouchEnd(keys.summon)}
-                    >SUM</button>
-                </div>
-            </div>
-            {/* Center Hint */}
-            <div className="absolute bottom-32 left-0 right-0 text-center pointer-events-none opacity-40 text-[10px] text-amber-200 font-mono">
-                DRAG SCREEN TO LOOK
-            </div>
-        </div>
-    );
-};
 
 const AuthModal = () => {
     // Legacy modal kept for Desk interaction, but main login is now LandingPage
@@ -537,7 +451,7 @@ export default function App() {
     const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || heldBookOpensOverlay);
 
     return (
-        <div className="w-screen h-screen bg-black overflow-hidden relative font-sans box-border select-none overscroll-none touch-none border-4 border-[#8b5cf6]">
+        <div className="w-screen h-screen bg-black overflow-hidden relative font-sans box-border select-none overscroll-none touch-none">
 
             {/* 3D SCENE CONTAINER - MOUNTED IMMEDIATELY IN BACKGROUND */}
             <div className="absolute inset-0 z-10 fade-in-active">
