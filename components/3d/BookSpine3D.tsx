@@ -11,6 +11,7 @@ export type SpineProps = {
   color?: string;
   spineLetter?: string;
   isEmpty?: boolean;
+  isLocked?: boolean;
   thickness?: number;
   onFloat?: () => void;
   onClick?: (e: any) => void;
@@ -70,7 +71,7 @@ const sharedBoxGeo = new THREE.BoxGeometry(1, 1, 1);
 const sharedPageGeo = new THREE.BoxGeometry(1, 1, 1);
 const sharedEmptyMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.8, metalness: 0.1 });
 
-export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = false, thickness = 0.2, onFloat, onClick, ...rest }: SpineProps) {
+export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = false, isLocked = false, thickness = 0.2, onFloat, onClick, ...rest }: SpineProps) {
   const visualGroupRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const [hovered, setHover] = useState(false);
@@ -82,9 +83,10 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
 
   const texture = useMemo(() => getLeatherTexture(), []);
 
-  // Cache color object to avoid GC pressure
-  const colorObj = useMemo(() => new THREE.Color(isEmpty ? '#1a1a1a' : color), [color, isEmpty]);
-  const highlightColor = useMemo(() => new THREE.Color(isEmpty ? '#1a1a1a' : color).offsetHSL(0, 0, 0.05), [color, isEmpty]);
+  // Locked books render as dark shadow; unlocked as full color
+  const effectiveColor = (isEmpty || isLocked) ? '#1a1a1a' : color;
+  const colorObj = useMemo(() => new THREE.Color(effectiveColor), [effectiveColor]);
+  const highlightColor = useMemo(() => new THREE.Color(effectiveColor).offsetHSL(0, 0, isLocked ? 0.02 : 0.05), [effectiveColor, isLocked]);
 
   useEffect(() => {
     if (hovered) {
@@ -103,7 +105,7 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
 
     // Only update position if it hasn't reached target or is hovered
     const needsPositionUpdate = Math.abs(currentZ - targetZ) > 0.001;
-    const needsHoverLogic = hovered && !isEmpty && onFloatRef.current && !isFloatTriggered.current;
+    const needsHoverLogic = hovered && !isEmpty && !isLocked && onFloatRef.current && !isFloatTriggered.current;
 
     if (!needsPositionUpdate && !needsHoverLogic && !hovered && (!materialRef.current || materialRef.current.emissiveIntensity < 0.001)) {
       return; // Skip work
@@ -191,34 +193,63 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
           <meshStandardMaterial
             ref={materialRef}
             color={hovered ? highlightColor : colorObj}
-            roughness={0.7}
-            metalness={0.15}
+            roughness={isLocked ? 0.9 : 0.7}
+            metalness={isLocked ? 0.05 : 0.15}
             bumpMap={texture || undefined}
             bumpScale={0.015}
             roughnessMap={texture || undefined}
           />
         </mesh>
 
-        {/* Spine Letter - Now on the FRONT face (Z = 0.51) */}
+        {/* === GOLD FOIL STRIP — vertical accent on spine front === */}
+        {!isEmpty && !isLocked && (
+          <>
+            {/* Vertical gold strip — left edge of front face */}
+            <mesh position={[-(thickness / 2) + 0.015, 0, depth / 2 + 0.001]}>
+              <planeGeometry args={[0.02, height * 0.85]} />
+              <meshStandardMaterial
+                color="#FFD700"
+                emissive="#D4AF37"
+                emissiveIntensity={1.5}
+                metalness={1}
+                roughness={0.1}
+                toneMapped={false}
+              />
+            </mesh>
+            {/* Bottom trim — gold accent bar */}
+            <mesh position={[0, -(height / 2) + 0.01, depth / 2 + 0.001]}>
+              <planeGeometry args={[thickness * 0.8, 0.015]} />
+              <meshStandardMaterial
+                color="#FFD700"
+                emissive="#D4AF37"
+                emissiveIntensity={1.2}
+                metalness={1}
+                roughness={0.15}
+                toneMapped={false}
+              />
+            </mesh>
+          </>
+        )}
+
+        {/* Spine Letter — prominent on the FRONT face */}
         {spineLetter && !isEmpty && (
           <Suspense fallback={null}>
             <Text
               position={[0, 0.45, 0.51]}
               rotation={[0, 0, 0]}
-              fontSize={0.15}
-              maxWidth={0.18}
+              fontSize={isLocked ? 0.15 : 0.2}
+              maxWidth={0.25}
               anchorX="center"
               anchorY="middle"
-              font="/fonts/Inter-Bold.woff" // Explicit font for stability
             >
               {spineLetter}
               <meshStandardMaterial
-                color="#FFD700"
-                metalness={1.0}
-                roughness={0.12}
-                emissive="#d4af37"
-                emissiveIntensity={0.6}
-                envMapIntensity={3.0}
+                color={isLocked ? '#333333' : '#1a0f0a'}
+                metalness={isLocked ? 0.1 : 0.3}
+                roughness={isLocked ? 0.8 : 0.6}
+                emissive={isLocked ? '#111111' : '#1a0f0a'}
+                emissiveIntensity={isLocked ? 0.05 : 0.3}
+                envMapIntensity={isLocked ? 0.2 : 1.0}
                 toneMapped={false}
               />
             </Text>

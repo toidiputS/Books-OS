@@ -17,7 +17,7 @@ type ShelfProps = {
 
 const BOOK_SPACING = 0.04;
 const SHELF_CAPACITY = 10;
-const ICE_WHITE = "#f0f8ff";
+const GOLD = '#D4AF37';
 
 function stringToSeed(str: string): number {
   let hash = 0;
@@ -43,6 +43,7 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
 export const Shelf: React.FC<ShelfProps> = ({ id, books, y = 0, seedOffset = 0, title, label }) => {
   const floatBook = useLibrary((s) => s.floatBook);
+  const isUnlocked = useLibrary((s) => !!s.unlockedShelves[id]);
 
   // Targeted selector: only re-render if one of THIS shelf's books changes state
   const bookIds = useMemo(() => books.map(b => b.id), [books]);
@@ -121,6 +122,7 @@ export const Shelf: React.FC<ShelfProps> = ({ id, books, y = 0, seedOffset = 0, 
             spineLetter={item.book?.spineLetter || item.fallbackLetter}
             color={item.book?.spineColor}
             isEmpty={!item.book}
+            isLocked={!isUnlocked}
             thickness={item.thickness}
             position={[item.x, item.y, 0]}
             rotation={[0, item.randTurn, item.randLean]}
@@ -132,10 +134,10 @@ export const Shelf: React.FC<ShelfProps> = ({ id, books, y = 0, seedOffset = 0, 
         );
       })}
 
-      {/* Shelf Board - Ice White Stack */}
+      {/* Shelf Board - Dark Obsidian */}
       <group position={[0, SHELF_Y, 0]}>
         <RoundedBox args={[shelfBoardWidth, SHELF_THICKNESS, 1.2]} radius={0.02} smoothness={2} receiveShadow>
-          <meshStandardMaterial color={ICE_WHITE} roughness={0.1} metalness={0.8} />
+          <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.85} />
         </RoundedBox>
         <mesh position={[0, -0.11, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
           <planeGeometry args={[shelfBoardWidth, 0.1]} />
@@ -152,7 +154,7 @@ export const Shelf: React.FC<ShelfProps> = ({ id, books, y = 0, seedOffset = 0, 
               anchorY="middle"
             >
               {label}
-              <meshStandardMaterial color={ICE_WHITE} emissive={ICE_WHITE} emissiveIntensity={2.5} toneMapped={false} />
+              <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={2.5} toneMapped={false} />
             </Text>
           </Suspense>
         )}

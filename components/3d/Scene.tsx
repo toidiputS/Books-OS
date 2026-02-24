@@ -5,7 +5,7 @@ import { PerfBudget } from './PerfBudget';
 import { Shelf } from './Shelf';
 import { Desk } from './Desk';
 import { BookSpine3D } from './BookSpine3D';
-import { useLibrary } from '../../stores/library';
+import { useLibrary, TOWER_DEFS } from '../../stores/library';
 import { useUI } from '../../stores/ui';
 import { useSystem } from '../../stores/system';
 import { BakeShadows, PerspectiveCamera, PointerLockControls, Text, Environment } from '@react-three/drei';
@@ -16,7 +16,8 @@ import * as THREE from 'three';
 
 // --- COMPONENTS ---
 
-const ICE_WHITE = "#f0f8ff"; // AliceBlue / Ice White
+const GOLD = '#D4AF37';
+const DARK_GOLD = '#B8860B';
 
 function ExitSign() {
     const [hovered, setHover] = useState(false);
@@ -41,7 +42,7 @@ function ExitSign() {
                 />
             </mesh>
             <Suspense fallback={null}>
-                <group rotation={[Math.PI / 2, Math.PI, 0]}>
+                <group rotation={[-Math.PI / 2, 0, 0]}>
                     <Text
                         fontSize={8}
                         anchorX="center"
@@ -61,56 +62,64 @@ function ExitSign() {
     );
 }
 
-function FoundationBlock({ x, y, z, rotY, height, showDisplay = false }: { x: number, y: number, z: number, rotY: number, height: number, showDisplay?: boolean, key?: any }) {
+function TowerBase({ x, y, z, rotY, height, towerIndex, towerLabel, towerSubtitle }: {
+    x: number; y: number; z: number; rotY: number; height: number;
+    towerIndex: number; towerLabel: string; towerSubtitle: string;
+}) {
     return (
         <group position={[x, y, z]} rotation={[0, rotY, 0]}>
-            {/* Block Mesh - Ice White Metallic */}
+            {/* Block Mesh — dark obsidian */}
             <mesh castShadow receiveShadow>
                 <boxGeometry args={[5.0, height, 2]} />
-                <meshStandardMaterial
-                    color={ICE_WHITE}
-                    roughness={0.1}
-                    metalness={0.9}
-                />
+                <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.85} />
             </mesh>
 
-            {/* High Ticket UI Text - Display on the FRONT face (Z=1.01) which now faces the desk */}
-            {showDisplay && (
-                <Suspense fallback={null}>
-                    <group position={[0, 0, 1.01]}>
-                        <Text
-                            position={[0, 1.8, 0]}
-                            fontSize={0.25}
-                            anchorX="center"
-                            anchorY="middle"
-                            letterSpacing={0.1}
-                        >
-                            itsyouonline.com
-                            <meshStandardMaterial color={ICE_WHITE} emissive={ICE_WHITE} emissiveIntensity={2.5} toneMapped={false} />
-                        </Text>
-                        <Text
-                            position={[0, 1.2, 0]}
-                            fontSize={0.6}
-                            anchorX="center"
-                            anchorY="middle"
-                            letterSpacing={0.05}
-                        >
-                            ORC - ORACLE
-                            <meshStandardMaterial color={ICE_WHITE} emissive={ICE_WHITE} emissiveIntensity={3.0} toneMapped={false} />
-                        </Text>
-                        <Text
-                            position={[0, 0.6, 0]}
-                            fontSize={0.18}
-                            anchorX="center"
-                            anchorY="middle"
-                            letterSpacing={0.2}
-                        >
-                            PORTALS OS / MASTER NEXUS
-                            <meshStandardMaterial color={ICE_WHITE} emissive={ICE_WHITE} emissiveIntensity={2.0} toneMapped={false} />
-                        </Text>
-                    </group>
-                </Suspense>
-            )}
+            {/* Gold engraving on the FRONT face */}
+            <Suspense fallback={null}>
+                <group position={[0, 0, 1.01]}>
+                    {/* Tower number */}
+                    <Text
+                        position={[0, 0.7, 0]}
+                        fontSize={0.14}
+                        anchorX="center"
+                        anchorY="middle"
+                        letterSpacing={0.3}
+                    >
+                        {`TOWER ${towerIndex}`}
+                        <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={2.5} metalness={1} roughness={0.15} toneMapped={false} />
+                    </Text>
+
+                    {/* Month / name label */}
+                    <Text
+                        position={[0, 0.3, 0]}
+                        fontSize={0.35}
+                        anchorX="center"
+                        anchorY="middle"
+                        letterSpacing={0.08}
+                    >
+                        {towerLabel}
+                        <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={3.0} metalness={1} roughness={0.1} toneMapped={false} />
+                    </Text>
+
+                    {/* Decorative divider */}
+                    <mesh position={[0, 0.05, 0]}>
+                        <planeGeometry args={[2.0, 0.004]} />
+                        <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={1.5} toneMapped={false} />
+                    </mesh>
+
+                    {/* Subtitle */}
+                    <Text
+                        position={[0, -0.2, 0]}
+                        fontSize={0.22}
+                        anchorX="center"
+                        anchorY="middle"
+                        letterSpacing={0.1}
+                    >
+                        {towerSubtitle}
+                        <meshStandardMaterial color={DARK_GOLD} emissive={DARK_GOLD} emissiveIntensity={1.5} metalness={1} roughness={0.25} toneMapped={false} />
+                    </Text>
+                </group>
+            </Suspense>
         </group>
     );
 }
@@ -119,11 +128,9 @@ function FoundationBlock({ x, y, z, rotY, height, showDisplay = false }: { x: nu
 
 function VortexManager() {
     const flyingIds = useLibrary(useShallow(s => Object.keys(s.bookStates).filter(id => s.bookStates[id] === 'flying')));
-    const flyingTimers = useLibrary(s => s.flyingTimers);
     const returnBookToShelf = useLibrary(s => s.returnBookToShelf);
     const setBookState = useLibrary(s => s.setBookState);
     const books = useLibrary(s => s.books);
-    const bookStates = useLibrary(s => s.bookStates); // Still need this for cleanup check
 
     // Physics state for floating books
     const physicsRefs = useRef<Record<string, {
@@ -140,13 +147,6 @@ function VortexManager() {
         const t = state.clock.getElapsedTime();
 
         flyingIds.forEach(id => {
-            // Lifecycle: Return to shelf check
-            if (flyingTimers[id] && now > flyingTimers[id]) {
-                returnBookToShelf(id);
-                delete physicsRefs.current[id];
-                return;
-            }
-
             // Ensure physics object exists (safety for late mounting)
             if (!physicsRefs.current[id]) {
                 return;
@@ -356,13 +356,23 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
             camera.getWorldDirection(camDirection);
             camera.position.addScaledVector(camDirection, delta);
             if (camera.position.y < 2.0) camera.position.y = 2.0;
-            if (camera.position.y > 80) {
-                window.location.href = 'https://itsyouonline.com';
-            }
+            if (camera.position.y > 190) camera.position.y = 190;
         };
         window.addEventListener('wheel', handleWheel, { passive: false });
         return () => window.removeEventListener('wheel', handleWheel);
     }, [view, camera, cameraSpeed]);
+
+    // Middle-click (scroll wheel click) to unlock cursor
+    useEffect(() => {
+        const handleMiddleClick = (e: MouseEvent) => {
+            if (e.button === 1 && document.pointerLockElement) {
+                e.preventDefault();
+                document.exitPointerLock();
+            }
+        };
+        window.addEventListener('mousedown', handleMiddleClick);
+        return () => window.removeEventListener('mousedown', handleMiddleClick);
+    }, []);
 
     useFrame((state, delta) => {
         if (view !== 'stacks') return;
@@ -370,10 +380,7 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
             state.pointer.x = 0;
             state.pointer.y = 0;
         }
-        if (camera.position.y > 80) {
-            window.location.href = 'https://itsyouonline.com';
-            return;
-        }
+        if (camera.position.y > 190) camera.position.y = 190;
         const baseSpeed = 8.0 * cameraSpeed;
         const speed = moveState.current.run ? baseSpeed * 3.0 : baseSpeed;
         const camDirection = new THREE.Vector3();
@@ -395,67 +402,74 @@ function MainContent() {
     const shelves = useLibrary((s) => s.shelves);
     const books = useLibrary((s) => s.books);
 
-    const allShelfData = useMemo(() => {
-        return Object.values(shelves).map((shelf: LibraryShelf) => ({
-            ...shelf,
-            bookDetails: shelf.bookIds.map((id) => books[id]).filter((b): b is BookLite => !!b),
-        }));
-    }, [shelves, books]);
-
-    const SHELVES_PER_RING = 12;
+    const TOWERS = 14;
     const RADIUS = 18;
     const LEVEL_HEIGHT = 3.5;
     const VISUAL_FLOOR_Y = -2.5;
-    const SHELF_START_Y = 2.4;
-    const SHELF_CONTENT_DROP = 0.9;
-    const BLOCK_TOP_Y = SHELF_START_Y - SHELF_CONTENT_DROP;
-    const BLOCK_HEIGHT = BLOCK_TOP_Y - VISUAL_FLOOR_Y;
-    const BLOCK_CENTER_Y = VISUAL_FLOOR_Y + (BLOCK_HEIGHT / 2);
+    const SHELF_START_Y = 1.5;
+    const BLOCK_HEIGHT = 3.0; // Fixed base pedestal height
+    const BLOCK_CENTER_Y = VISUAL_FLOOR_Y + (BLOCK_HEIGHT / 2); // Block sits on floor
+    const SHELVES_PER_TOWER = 30;
+    const BASE_YEAR = 2026;
 
-    const foundationBlocks = useMemo(() => {
-        const blocks = [];
-        for (let s = 0; s < SHELVES_PER_RING; s++) {
-            const angle = (s / SHELVES_PER_RING) * Math.PI * 2;
+    // Pre-compute tower angles (14 evenly spaced)
+    const towerAngles = useMemo(() =>
+        TOWER_DEFS.map((_, i) => (i / TOWERS) * Math.PI * 2),
+        []);
+
+    // Tower base blocks
+    const towerBases = useMemo(() =>
+        TOWER_DEFS.map((tower, i) => {
+            const angle = towerAngles[i];
+            return {
+                key: `tower-base-${tower.key}`,
+                x: Math.cos(angle) * RADIUS,
+                z: Math.sin(angle) * RADIUS,
+                y: BLOCK_CENTER_Y,
+                rotY: -angle - Math.PI / 2,
+                towerIndex: tower.index,
+                towerLabel: tower.label,
+                towerSubtitle: tower.subtitle,
+            };
+        }),
+        [towerAngles, BLOCK_CENTER_Y]);
+
+    // Shelf positions — 14 towers × 30 levels stacked vertically
+    const shelfPositions = useMemo(() => {
+        const positions: {
+            key: string; x: number; y: number; z: number;
+            rotY: number; label: string; shelfId: string;
+        }[] = [];
+
+        TOWER_DEFS.forEach((tower, towerIdx) => {
+            const angle = towerAngles[towerIdx];
             const x = Math.cos(angle) * RADIUS;
             const z = Math.sin(angle) * RADIUS;
-
-            // FACING INSIDE: rotY = -angle - PI/2
             const rotY = -angle - Math.PI / 2;
 
-            // Show Text on the first block (index 0), which usually aligns with Start
-            const showDisplay = (s === 0);
+            for (let level = 0; level < SHELVES_PER_TOWER; level++) {
+                const lvl = (level + 1).toString().padStart(2, '0');
+                let shelfId: string;
+                let label: string;
 
-            blocks.push({ key: `block-${s}`, x, y: BLOCK_CENTER_Y, z, rotY, showDisplay });
-        }
-        return blocks;
-    }, [BLOCK_CENTER_Y, RADIUS, SHELVES_PER_RING]);
+                if (tower.key === 'MYTHOLOGY' || tower.key === 'BEFORE') {
+                    shelfId = `TOWER-${tower.key}-SHELF-${lvl}`;
+                    label = `SHELF ${level + 1}`;
+                } else {
+                    const year = BASE_YEAR + level;
+                    shelfId = `TOWER-${tower.key}-YEAR-${year}`;
+                    label = `${year}`;
+                }
 
-    const shelfPositions = useMemo(() => {
-        const positions = [];
-        let idx = 0;
-        const rings = Math.ceil(Math.max(allShelfData.length, 1) / SHELVES_PER_RING);
-        for (let r = 0; r < rings; r++) {
-            for (let s = 0; s < SHELVES_PER_RING; s++) {
-                if (idx >= allShelfData.length) break;
-                const angle = (s / SHELVES_PER_RING) * Math.PI * 2;
-                const x = Math.cos(angle) * RADIUS;
-                const z = Math.sin(angle) * RADIUS;
-                const y = SHELF_START_Y + (r * LEVEL_HEIGHT);
-
-                // FACING INSIDE: rotY = -angle - PI/2
-                const rotY = -angle - Math.PI / 2;
-
-                // Correct Labeling: Parse from ID (STACK-JAN-LVL-01)
-                const matches = allShelfData[idx].id.match(/STACK-(\w+)-LVL-(\d+)/);
-                const label = matches ? `${matches[1]} ${25 + parseInt(matches[2])}` : `S${(r + 1).toString().padStart(2, '0')}`;
-
-                positions.push({ data: allShelfData[idx], x, y, z, rotY, label, key: allShelfData[idx].id });
-                idx++;
+                const y = SHELF_START_Y + (level * LEVEL_HEIGHT);
+                positions.push({ key: shelfId, x, y, z, rotY, label, shelfId });
             }
-        }
-        return positions;
-    }, [allShelfData, SHELF_START_Y, LEVEL_HEIGHT, RADIUS, SHELVES_PER_RING]);
+        });
 
+        return positions;
+    }, [towerAngles]);
+
+    // Progressive loading — batch in shelves to avoid frame drops
     const [limit, setLimit] = useState(0);
     useEffect(() => {
         if (shelfPositions.length < 50) {
@@ -476,25 +490,41 @@ function MainContent() {
 
     return (
         <>
-            {foundationBlocks.map((blk) => (
-                <FoundationBlock
-                    key={blk.key}
-                    x={blk.x}
-                    y={blk.y}
-                    z={blk.z}
-                    rotY={blk.rotY}
+            {/* Tower bases with gold engravings */}
+            {towerBases.map((base) => (
+                <TowerBase
+                    key={base.key}
+                    x={base.x}
+                    y={base.y}
+                    z={base.z}
+                    rotY={base.rotY}
                     height={BLOCK_HEIGHT}
-                    showDisplay={blk.showDisplay}
+                    towerIndex={base.towerIndex}
+                    towerLabel={base.towerLabel}
+                    towerSubtitle={base.towerSubtitle}
                 />
             ))}
-            {shelfPositions.slice(0, limit).map((pos) => (
-                <group key={pos.key} position={[pos.x, pos.y, pos.z]} rotation={[0, pos.rotY, 0]}>
-                    <Shelf id={pos.data.id} title={pos.data.title} books={pos.data.bookDetails} label={pos.label} />
-                </group>
-            ))}
+
+            {/* Shelves — stacked vertically per tower */}
+            {shelfPositions.slice(0, limit).map((pos) => {
+                const shelf = shelves[pos.shelfId];
+                if (!shelf) return null;
+                const bookDetails = shelf.bookIds
+                    .map(id => books[id])
+                    .filter((b): b is BookLite => !!b);
+
+                return (
+                    <group key={pos.key} position={[pos.x, pos.y, pos.z]} rotation={[0, pos.rotY, 0]}>
+                        <Shelf id={shelf.id} title={shelf.title} books={bookDetails} label={pos.label} />
+                    </group>
+                );
+            })}
+
+            {/* Center display pillar */}
             <group position={[0, 0, 0]}>
                 <Desk />
             </group>
+
             <VortexManager />
             <HeldBookManager />
             <ExitSign />
@@ -504,36 +534,39 @@ function MainContent() {
 
 export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
     const lightingLevel = useSystem((s) => s.lightingLevel);
-    const ambientIntensity = 0.2 + (lightingLevel * 0.6);
-    const hemiIntensity = 0.1 + (lightingLevel * 0.4);
-    const mainLightIntensity = lightingLevel * 2.0;
-    const deskLightIntensity = 1.0 + (lightingLevel * 1.0);
-    const envIntensity = 0.2 + (lightingLevel * 0.6);
+    // Lowered lighting for moodier archive atmosphere
+    const ambientIntensity = 0.1 + (lightingLevel * 0.3);
+    const hemiIntensity = 0.05 + (lightingLevel * 0.2);
+    const mainLightIntensity = lightingLevel * 1.2;
+    const pillarLightIntensity = 0.8 + (lightingLevel * 0.6);
+    const envIntensity = 0.15 + (lightingLevel * 0.4);
 
     return (
         <Canvas
             id="root"
             shadows
             dpr={isMobile ? [1, 1.5] : [1, 2]}
-            gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.5 }}
+            gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.2 }}
         >
             <PerspectiveCamera makeDefault position={[0, 60, 0]} rotation={[-Math.PI / 2, 0, 0]} fov={isMobile ? 95 : 85} near={0.1} far={500} />
             <PlayerController isMobile={isMobile} />
 
-            <color attach="background" args={['#050505']} />
-            <fog attach="fog" args={['#050505', 10, 250]} />
+            <color attach="background" args={['#030303']} />
+            <fog attach="fog" args={['#030303', 10, 250]} />
 
-            <ambientLight intensity={ambientIntensity} color="#ffffff" />
-            <hemisphereLight intensity={hemiIntensity} color="#ffffff" groundColor="#333333" />
-            <pointLight position={[0, 80, 0]} intensity={mainLightIntensity} color="#fffaf0" distance={150} decay={1} />
-            <pointLight position={[0, 20, 0]} intensity={deskLightIntensity} color="#fffaf0" distance={60} decay={1} />
+            <ambientLight intensity={ambientIntensity} color="#fff5e6" />
+            <hemisphereLight intensity={hemiIntensity} color="#fff5e6" groundColor="#1a0f0a" />
+            <pointLight position={[0, 80, 0]} intensity={mainLightIntensity} color="#fffaf0" distance={200} decay={1} />
+            <pointLight position={[0, 15, 0]} intensity={pillarLightIntensity} color="#fffaf0" distance={40} decay={2} />
 
+            {/* Dark wood floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]} receiveShadow>
-                <circleGeometry args={[60, 64]} />
-                <meshStandardMaterial color="#111111" roughness={0.4} metalness={0.2} />
+                <circleGeometry args={[80, 64]} />
+                <meshStandardMaterial color="#1a0f0a" roughness={0.8} metalness={0.05} />
             </mesh>
 
-            <gridHelper position={[0, -2.4, 0]} args={[40, 40, '#444', '#111']} />
+            {/* Subtle grid — very faint */}
+            <gridHelper position={[0, -2.4, 0]} args={[50, 50, '#1a1510', '#0d0a07']} />
 
             <Suspense fallback={null}>
                 <Environment preset="warehouse" environmentIntensity={envIntensity} />

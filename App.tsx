@@ -7,6 +7,8 @@ import { useSystem, KeyMap } from './stores/system';
 import { Catalog } from './components/ui/Catalog';
 import { LandingPage } from './components/ui/LandingPage';
 import { BookOpenOverlay } from './components/ui/BookOpenOverlay';
+import { initArchiveReceiver } from './stores/archiveReceiver';
+import { ArchiveToast, showToast } from './components/ui/ArchiveToast';
 
 declare global {
     namespace JSX {
@@ -210,7 +212,6 @@ const SettingsMenu = () => {
     const { isSettingsOpen, setSettingsOpen } = useUI();
     const { cameraSpeed, setCameraSpeed, keys, setKey, resetKeys } = useSystem();
     const clearLibrary = useLibrary((s) => s.clearLibrary);
-    const initShelves = useLibrary((s) => s.initShelves);
     const [listening, setListening] = useState<keyof KeyMap | null>(null);
 
     if (!isSettingsOpen) return null;
@@ -352,8 +353,7 @@ export default function App() {
     const bookStates = useLibrary(s => s.bookStates);
     const selectedBookId = useLibrary(s => s.selectedBookId);
     const libraryCardName = useLibrary(s => s.libraryCardName);
-    const initShelves = useLibrary(s => s.initShelves);
-    const seedSpecs = useLibrary(s => s.seedSpecs);
+    const initTowers = useLibrary(s => s.initTowers);
     const clearLibrary = useLibrary(s => s.clearLibrary);
     const summonBook = useLibrary(s => s.summonBook);
     const returnBookToShelf = useLibrary(s => s.returnBookToShelf);
@@ -372,10 +372,8 @@ export default function App() {
     const heldBookId = useMemo(() => Object.keys(bookStates).find(id => bookStates[id] === 'held'), [bookStates]);
     const heldBook = useMemo(() => heldBookId ? books[heldBookId] : null, [heldBookId, books]);
 
-    // SPECIAL TREATMENT: Books A-J open the special overlay
-    const isHeldBookSpec = useMemo(() =>
-        !!(heldBook && ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].includes(heldBook.spineLetter || '')),
-        [heldBook]);
+    // Any held book opens BookOpenOverlay
+    const heldBookOpensOverlay = !!heldBook;
 
     // Detect Mobile
     useEffect(() => {
@@ -404,11 +402,7 @@ export default function App() {
                     if (!libraryCardName) {
                         alert("ACCESS DENIED: NO LIBRARY CARD. PLEASE LOG IN AT THE DESK.");
                     } else if (book && !book.isLocked) {
-                        // Only allow 'reading' mode via select() if it's NOT a Spec Book (A-J)
-                        // Spec books open via the overlay condition in render
-                        if (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].includes(book.spineLetter || '') === false) {
-                            select(heldId);
-                        }
+                        select(heldId);
                     }
                 }
             }
@@ -418,44 +412,27 @@ export default function App() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [summonBook, bookStates, books, select, isCatalogOpen, isSettingsOpen, selectedBookId, libraryCardName, keys]);
 
-    const seedEmptyShelves = () => {
-        // 12 stacks logic (JAN-DEC)
-        const categories = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-        const shelfNames: string[] = [];
-
-        // NEW STRUCTURE: 20 levels * 12 stacks = 240 shelves
-        for (let level = 0; level < 20; level++) {
-            for (let seg = 0; seg < 12; seg++) {
-                // Keep the name empty by default unless specifically needed, 
-                // but generate a unique ID
-                const cat = categories[seg];
-                const id = `STACK-${cat}-LVL-${(level + 1).toString().padStart(2, '0')}`;
-                shelfNames.push(id);
-            }
-        }
-        initShelves(shelfNames);
-
-        // Populate with specs
-        seedSpecs();
-    };
-
     useEffect(() => {
         const t = setTimeout(() => {
-            // Check if shelf count matches the new target (240)
-            // If the old store has mismatch, we must reset.
             const count = Object.keys(useLibrary.getState().shelves).length;
-            const TARGET_SHELVES = 240; // 20 levels * 12 stacks
+            const TARGET_SHELVES = 420; // 14 towers × 30 shelves
 
             if (count !== TARGET_SHELVES) {
-                console.log("Library topology mismatch. Re-seeding universe...");
-                clearLibrary(); // Clear old layout
-                seedEmptyShelves();
+                console.log("Library topology mismatch. Re-seeding Younique Archive...");
+                clearLibrary();
+                useLibrary.getState().initTowers();
             }
         }, 200);
         return () => clearTimeout(t);
     }, []);
 
-    const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || isHeldBookSpec);
+    // Archive receiver — listen for younique_archive_commit
+    useEffect(() => {
+        const cleanup = initArchiveReceiver((msg) => showToast(msg));
+        return cleanup;
+    }, []);
+
+    const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || heldBookOpensOverlay);
 
     return (
         <div className="w-screen h-screen bg-black overflow-hidden relative font-sans box-border select-none overscroll-none touch-none border-4 border-[#8b5cf6]">
@@ -470,8 +447,8 @@ export default function App() {
                 <LandingPage onEnterWorld={() => { /* No-op, world already loaded */ }} />
             )}
 
-            {/* SPECIAL BOOK OVERLAY FOR BOOK A-J */}
-            {isHeldBookSpec && heldBook && (
+            {/* BOOK OVERLAY — All books */}
+            {heldBookOpensOverlay && heldBook && (
                 <BookOpenOverlay
                     book={heldBook}
                     onClose={() => returnBookToShelf(heldBook.id)}
@@ -519,31 +496,15 @@ export default function App() {
                         </div>
                     )}
 
-                    {/* Bottom Right: Teal Branding Box (Requested Edit) */}
-                    {!isMobile && heldBook?.spineLetter === 'A' && (
-                        <div className="absolute bottom-8 right-8 text-[#2dd4bf] pointer-events-none hidden md:block text-right">
-                            <div className="text-[10px] font-mono space-y-2 drop-shadow-md">
-                                <p className="text-[#2dd4bf] font-bold border-b border-[#2dd4bf]/40 pb-1 mb-2">CHPT A itsaiagent.solutions</p>
-                                <p>Alpha Commander: Ops / Infrastructure / Automation</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {!isMobile && heldBook?.spineLetter === 'B' && (
-                        <div className="absolute bottom-8 right-8 text-[#fbbf24] pointer-events-none hidden md:block text-right">
-                            <div className="text-[10px] font-mono space-y-2 drop-shadow-md">
-                                <p className="text-[#fbbf24] font-bold border-b border-[#fbbf24]/40 pb-1 mb-2">CHPT B itsaiagent.solutions</p>
-                                <p>Beta Commander: Flows / Handoffs / Connectivity</p>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Aim Dot */}
                     {!isOverlayOpen && (
                         <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-amber-500/50 rounded-full transform -translate-x-1/2 -translate-y-1/2 mix-blend-difference" />
                     )}
                 </div>
             )}
+
+            {/* Archive Toast Notifications */}
+            <ArchiveToast />
 
         </div>
     );
