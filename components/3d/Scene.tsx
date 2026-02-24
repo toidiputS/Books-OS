@@ -424,118 +424,75 @@ function PlayerController({ isMobile }: { isMobile: boolean }) {
     return (view === 'stacks' && !isMobile && !isOverlayOpen) ? <PointerLockControls /> : null;
 }
 
-// ── Procedural Walnut Wood Floor ──
-function createWalnutTexture(): THREE.CanvasTexture {
+// ── Procedural Deep Obsidian Floor with System Grid ──
+function createObsidianTexture(): THREE.CanvasTexture {
     const size = 1024;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d')!;
 
-    // Base walnut color — warm dark brown
-    ctx.fillStyle = '#1E110A';
+    // Base color — absolute deep black
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, size, size);
 
-    // Wood grain — flowing horizontal lines with wave
-    for (let i = 0; i < 120; i++) {
-        const y = (i / 120) * size;
-        const darkness = 0.3 + Math.random() * 0.5;
-        const width = 1 + Math.random() * 3;
+    // Subtle Grid Lines
+    const gridSize = 128; // Size of each grid square
+    ctx.strokeStyle = '#D4AF37'; // Gold/Amber
+    ctx.lineWidth = 1;
 
+    // Grid with varying opacity for depth
+    for (let y = 0; y <= size; y += gridSize) {
+        ctx.globalAlpha = 0.02;
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(5, 2, 1, ${darkness})`;
-        ctx.lineWidth = width;
-
-        for (let x = 0; x < size; x += 4) {
-            const wave = Math.sin(x * 0.008 + i * 0.7) * 6 +
-                Math.sin(x * 0.02 + i * 1.3) * 3 +
-                Math.sin(x * 0.004) * 12;
-            if (x === 0) ctx.moveTo(x, y + wave);
-            else ctx.lineTo(x, y + wave);
-        }
+        ctx.moveTo(0, y);
+        ctx.lineTo(size, y);
         ctx.stroke();
     }
 
-    // Lighter grain highlights
-    for (let i = 0; i < 40; i++) {
-        const y = Math.random() * size;
+    for (let x = 0; x <= size; x += gridSize) {
+        ctx.globalAlpha = 0.02;
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(50, 28, 12, ${0.15 + Math.random() * 0.2})`;
-        ctx.lineWidth = 0.5 + Math.random() * 1.5;
-
-        for (let x = 0; x < size; x += 4) {
-            const wave = Math.sin(x * 0.006 + i * 2) * 8 +
-                Math.sin(x * 0.015 + i) * 4;
-            if (x === 0) ctx.moveTo(x, y + wave);
-            else ctx.lineTo(x, y + wave);
-        }
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, size);
         ctx.stroke();
     }
 
-    // Occasional knots — darker ellipses
-    for (let k = 0; k < 8; k++) {
-        const kx = Math.random() * size;
-        const ky = Math.random() * size;
-        const kr = 10 + Math.random() * 20;
-
-        const grad = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
-        grad.addColorStop(0, 'rgba(5, 2, 0, 0.9)');
-        grad.addColorStop(0.5, 'rgba(10, 4, 1, 0.6)');
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(kx, ky, kr, kr * 0.6, Math.random() * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Ring lines around knot
-        for (let ring = 0; ring < 6; ring++) {
-            const rr = kr + ring * 4 + Math.random() * 3;
+    // Intersections — tiny glowing points
+    ctx.globalAlpha = 0.1;
+    for (let x = 0; x <= size; x += gridSize) {
+        for (let y = 0; y <= size; y += gridSize) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(8, 3, 1, ${0.15 + Math.random() * 0.2})`;
-            ctx.lineWidth = 0.5;
-            ctx.ellipse(kx, ky, rr, rr * 0.5, Math.random() * 0.3, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+            ctx.fillStyle = '#D4AF37';
+            ctx.fill();
         }
-    }
-
-    // Fine detail grain
-    for (let d = 0; d < 200; d++) {
-        const dy = Math.random() * size;
-        const dx = Math.random() * size;
-        const dlen = 30 + Math.random() * 80;
-        ctx.beginPath();
-        ctx.strokeStyle = `rgba(30, 15, 5, ${0.08 + Math.random() * 0.12})`;
-        ctx.lineWidth = 0.3 + Math.random() * 0.5;
-        ctx.moveTo(dx, dy);
-        ctx.lineTo(dx + dlen, dy + (Math.random() - 0.5) * 6);
-        ctx.stroke();
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(8, 8);
+    texture.repeat.set(16, 16);
     texture.colorSpace = THREE.SRGBColorSpace;
     return texture;
 }
 
-const walnutTextureCache = { tex: null as THREE.CanvasTexture | null };
-function getWalnutTexture() {
-    if (!walnutTextureCache.tex) walnutTextureCache.tex = createWalnutTexture();
-    return walnutTextureCache.tex;
+const obsidianTextureCache = { tex: null as THREE.CanvasTexture | null };
+function getObsidianTexture() {
+    if (!obsidianTextureCache.tex) obsidianTextureCache.tex = createObsidianTexture();
+    return obsidianTextureCache.tex;
 }
 
-function WalnutFloor() {
-    const texture = useMemo(() => getWalnutTexture(), []);
+function ObsidianFloor() {
+    const texture = useMemo(() => getObsidianTexture(), []);
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]} receiveShadow>
-            <circleGeometry args={[80, 64]} />
+            <planeGeometry args={[1000, 1000]} />
             <meshStandardMaterial
                 map={texture}
-                roughness={0.65}
-                metalness={0.08}
-                color="#2a1a10"
+                roughness={0.0}
+                metalness={0.2}
+                envMapIntensity={0.8}
             />
         </mesh>
     );
@@ -737,8 +694,8 @@ export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
             <pointLight position={[0, 80, 0]} intensity={mainLightIntensity} color="#fffaf0" distance={200} decay={1} />
             <pointLight position={[0, 15, 0]} intensity={pillarLightIntensity} color="#fffaf0" distance={40} decay={2} />
 
-            {/* Walnut Wood Floor */}
-            <WalnutFloor />
+            {/* Obsidian Floor with Gold Veins */}
+            <ObsidianFloor />
 
             {/* Y-A Logo on floor */}
             <Suspense fallback={null}>
