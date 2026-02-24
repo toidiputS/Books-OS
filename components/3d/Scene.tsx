@@ -508,15 +508,19 @@ function FloorLogo() {
     if (!texture) return null;
 
     return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.48, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.47, 0]}>
             <planeGeometry args={[30, 30]} />
             <meshStandardMaterial
                 map={texture}
                 transparent
-                opacity={0.35}
-                roughness={0.7}
-                metalness={0.1}
+                opacity={0.7}
+                emissive="#ffffff"
+                emissiveIntensity={0.15}
+                roughness={0.5}
+                metalness={0.0}
                 depthWrite={false}
+                polygonOffset
+                polygonOffsetFactor={-1}
             />
         </mesh>
     );
