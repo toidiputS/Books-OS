@@ -7,6 +7,7 @@ import { useSystem, KeyMap } from './stores/system';
 import { Catalog } from './components/ui/Catalog';
 import { LandingPage } from './components/ui/LandingPage';
 import { BookOpenOverlay } from './components/ui/BookOpenOverlay';
+import { CanonViewer } from './components/ui/CanonViewer';
 import { initArchiveReceiver } from './stores/archiveReceiver';
 import { ArchiveToast, showToast } from './components/ui/ArchiveToast';
 import { supabase } from './services/supabase';
@@ -280,6 +281,8 @@ export default function App() {
     const isCatalogOpen = useUI(s => s.isCatalogOpen);
     const setCatalogOpen = useUI(s => s.setCatalogOpen);
     const isSettingsOpen = useUI(s => s.isSettingsOpen);
+    const isCanonOpen = useUI(s => s.isCanonOpen);
+    const setCanonOpen = useUI(s => s.setCanonOpen);
 
     const books = useLibrary(s => s.books);
     const bookStates = useLibrary(s => s.bookStates);
@@ -408,6 +411,13 @@ export default function App() {
                 clearLibrary();
                 useLibrary.getState().initTowers();
             }
+
+            // --- Ensure BEFORE shelf 1 is unlocked (migration for existing users) ---
+            const unlockShelf = useLibrary.getState().unlockShelf;
+            if (!useLibrary.getState().unlockedShelves['TOWER-BEFORE-SHELF-01']) {
+                unlockShelf('TOWER-BEFORE-SHELF-01');
+                console.log('Unlocked BEFORE shelf 1.');
+            }
         }, 200);
         return () => clearTimeout(t);
     }, []);
@@ -448,10 +458,17 @@ export default function App() {
         return () => subscription.unsubscribe();
     }, []);
 
-    const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || heldBookOpensOverlay);
+    // Canon viewer — listen for pillar-book click
+    useEffect(() => {
+        const handleOpenCanon = () => setCanonOpen(true);
+        window.addEventListener('open-canon', handleOpenCanon);
+        return () => window.removeEventListener('open-canon', handleOpenCanon);
+    }, [setCanonOpen]);
+
+    const isOverlayOpen = !!(isCatalogOpen || isSettingsOpen || selectedBook || !isAuthenticated || heldBookOpensOverlay || isCanonOpen);
 
     return (
-        <div className="w-screen h-screen bg-black overflow-hidden relative font-sans box-border select-none overscroll-none touch-none">
+        <div className="w-screen h-screen bg-black overflow-hidden relative font-sans box-border select-none overscroll-none touch-manipulation">
 
             {/* 3D SCENE CONTAINER - MOUNTED IMMEDIATELY IN BACKGROUND */}
             <div className="absolute inset-0 z-10 fade-in-active">
@@ -473,6 +490,7 @@ export default function App() {
 
             {isCatalogOpen && <Catalog />}
             {isSettingsOpen && <SettingsMenu />}
+            {isCanonOpen && <CanonViewer />}
             <AuthModal />
 
             {selectedBook && <BookReader book={selectedBook} onClose={() => select(null)} />}
@@ -485,17 +503,6 @@ export default function App() {
             {/* HUD Layer - Now persistent over Spec Book overlays as shown in screenshot */}
             {isAuthenticated && (
                 <div className="absolute inset-0 z-20 pointer-events-none">
-                    {/* Top Right: Search Index */}
-                    {!isCatalogOpen && !isSettingsOpen && !selectedBookId && (
-                        <div className="absolute top-0 right-0 p-4 md:p-8 pointer-events-auto flex gap-4">
-                            <button
-                                onClick={() => setCatalogOpen(true)}
-                                className="bg-black/50 backdrop-blur border border-amber-900/50 hover:border-amber-500 text-amber-500 hover:text-amber-300 px-4 md:px-6 py-2 font-mono text-xs uppercase tracking-widest transition-all"
-                            >
-                                Search Index
-                            </button>
-                        </div>
-                    )}
 
                     {/* Bottom Left: Controls HUD */}
                     {!isMobile && !isCatalogOpen && !isSettingsOpen && !selectedBookId && (

@@ -30,10 +30,11 @@ export function ExitSign() {
                 <Text
                     position={[0, 0, 0]}
                     rotation={[-Math.PI / 2, 0, 0]}
-                    fontSize={12}
+                    fontSize={48}
                     anchorX="center"
                     anchorY="middle"
                     letterSpacing={0.3}
+
                 >
                     EXIT
                     <meshStandardMaterial

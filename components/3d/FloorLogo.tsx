@@ -3,12 +3,11 @@ import React, { useEffect, useState } from 'react';
 import * as THREE from 'three';
 
 export function FloorLogo() {
-    // SVG files are unreliable with Three.js TextureLoader — use an error boundary approach
     const [texture, setTexture] = useState<THREE.Texture | null>(null);
     useEffect(() => {
         const loader = new THREE.TextureLoader();
         loader.load(
-            '/assets/y-a-logo.svg',
+            '/assets/floor-logo.png',
             (tex) => {
                 tex.colorSpace = THREE.SRGBColorSpace;
                 setTexture(tex);
@@ -24,16 +23,12 @@ export function FloorLogo() {
 
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.47, 0]}>
-            <planeGeometry args={[30, 30]} />
-            <meshStandardMaterial
+            <planeGeometry args={[36, 36]} />
+            <meshBasicMaterial
                 map={texture}
                 transparent
-                opacity={0.8}
-                color="#D4AF37"
-                emissive="#D4AF37"
-                emissiveIntensity={0.4}
-                roughness={0.3}
-                metalness={0.2}
+                opacity={0.85}
+                blending={THREE.AdditiveBlending}
                 depthWrite={false}
                 polygonOffset
                 polygonOffsetFactor={-1}

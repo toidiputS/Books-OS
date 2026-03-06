@@ -8,11 +8,13 @@ type UIState = {
   isCreatorOpen: boolean;
   isSettingsOpen: boolean;
   isShelfEditorOpen: boolean;
+  isCanonOpen: boolean;
   creatorShelfId: string | null;
   editingShelfId: string | null;
   setView: (v: ViewState) => void;
   setCatalogOpen: (isOpen: boolean) => void;
   setSettingsOpen: (isOpen: boolean) => void;
+  setCanonOpen: (isOpen: boolean) => void;
   openCreator: (shelfId: string) => void;
   closeCreator: () => void;
   openShelfEditor: (shelfId: string) => void;
@@ -25,11 +27,13 @@ export const useUI = create<UIState>((set) => ({
   isCreatorOpen: false,
   isSettingsOpen: false,
   isShelfEditorOpen: false,
+  isCanonOpen: false,
   creatorShelfId: null,
   editingShelfId: null,
   setView: (view) => set({ view }),
   setCatalogOpen: (isCatalogOpen) => set({ isCatalogOpen }),
   setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+  setCanonOpen: (isCanonOpen) => set({ isCanonOpen }),
   openCreator: (shelfId) => set({ isCreatorOpen: true, creatorShelfId: shelfId }),
   closeCreator: () => set({ isCreatorOpen: false, creatorShelfId: null }),
   openShelfEditor: (shelfId) => set({ isShelfEditorOpen: true, editingShelfId: shelfId }),

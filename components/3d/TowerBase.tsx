@@ -15,6 +15,49 @@ export function TowerBase({ x, y, z, rotY, height, towerIndex, towerLabel, tower
                 <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.85} />
             </mesh>
 
+            {/* Gold edge trim around base bottom — 4 straight bars */}
+            {(() => {
+                const w = 5.0;
+                const d = 2.0;
+                const bY = -(height / 2) + 0.015;
+                const t = 0.02; // bar thickness
+                const h = 0.02; // bar height
+                const mat = (
+                    <meshStandardMaterial
+                        color={GOLD}
+                        emissive={GOLD}
+                        emissiveIntensity={1.2}
+                        metalness={1}
+                        roughness={0.2}
+                        toneMapped={false}
+                    />
+                );
+                return (
+                    <>
+                        {/* Front edge */}
+                        <mesh position={[0, bY, d / 2]}>
+                            <boxGeometry args={[w + t, h, t]} />
+                            {mat}
+                        </mesh>
+                        {/* Back edge */}
+                        <mesh position={[0, bY, -d / 2]}>
+                            <boxGeometry args={[w + t, h, t]} />
+                            {mat}
+                        </mesh>
+                        {/* Left edge */}
+                        <mesh position={[-w / 2, bY, 0]}>
+                            <boxGeometry args={[t, h, d]} />
+                            {mat}
+                        </mesh>
+                        {/* Right edge */}
+                        <mesh position={[w / 2, bY, 0]}>
+                            <boxGeometry args={[t, h, d]} />
+                            {mat}
+                        </mesh>
+                    </>
+                );
+            })()}
+
             {/* Gold engraving on the FRONT face */}
             <Suspense fallback={null}>
                 <group position={[0, 0, 1.01]}>

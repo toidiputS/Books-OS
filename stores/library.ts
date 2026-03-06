@@ -104,12 +104,13 @@ type LibraryState = {
 };
 
 function makeShelfId(towerKey: string, level: number): string {
-  const lvl = level.toString().padStart(2, '0');
   if (towerKey === 'NEXUS' || towerKey === 'BEFORE') {
-    return `TOWER-${towerKey}-SHELF-${lvl}`;
+    const lvl = level.toString().padStart(2, '0');
+    return `${towerKey}-${lvl}`;
   }
   const year = BASE_YEAR + (level - 1);
-  return `TOWER-${towerKey}-YEAR-${year}`;
+  const yearShort = year.toString().slice(-2);
+  return `${towerKey}-${yearShort}`;
 }
 
 function makeShelfTitle(towerKey: string, level: number): string {
@@ -167,7 +168,7 @@ export const useLibrary = create<LibraryState>()(
 
             for (let i = 0; i < 10; i++) {
               const letter = LETTERS[i];
-              const bookId = `unit-${shelfId}-${letter}`;
+              const bookId = `${shelfId}-${letter}`;
 
               let title: string;
               let summary: string;
@@ -206,10 +207,11 @@ export const useLibrary = create<LibraryState>()(
           }
         }
 
-        // Auto-unlock: February tower first shelf + Nexus first shelf
+        // Auto-unlock: February tower first shelf + Nexus first shelf + Before first shelf
         const unlocked: Record<string, boolean> = { ...s.unlockedShelves };
         unlocked[makeShelfId('FEB', 1)] = true;
         unlocked[makeShelfId('NEXUS', 1)] = true;
+        unlocked[makeShelfId('BEFORE', 1)] = true;
 
         return {
           books: newBooks,
@@ -309,7 +311,7 @@ export const useLibrary = create<LibraryState>()(
       }),
     }),
     {
-      name: 'books-os:library-v7',
+      name: 'books-os:library-v8',
       storage: createJSONStorage(() => localStorage),
     }
   )

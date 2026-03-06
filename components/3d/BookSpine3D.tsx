@@ -174,7 +174,14 @@ export function BookSpine3D({ title, color = '#3e2723', spineLetter, isEmpty = f
       {...rest}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={onClick}
+      onClick={(e: any) => {
+        // Distance gate — ignore clicks from far away to prevent accidental selection
+        if (e.camera && e.point) {
+          const dist = e.camera.position.distanceTo(e.point);
+          if (dist > 30) return;
+        }
+        onClick?.(e);
+      }}
     >
       {/* Invisible hitbox - larger for easier selection */}
       <mesh visible={false}>

@@ -1,75 +1,176 @@
 
-import React, { useRef } from 'react';
-import { useSystem } from '../../stores/system';
+import React from 'react';
+import { setMoveFlag, type MoveFlags } from '../../stores/moveState';
+import { useLibrary } from '../../stores/library';
 
 export const MobileControls = () => {
-    const keys = useSystem(s => s.keys);
 
-    const triggerKey = (code: string, active: boolean) => {
-        const eventType = active ? 'keydown' : 'keyup';
-        window.dispatchEvent(new KeyboardEvent(eventType, { code }));
-    };
+    const summonBook = useLibrary(s => s.summonBook);
+    const bookStates = useLibrary(s => s.bookStates);
+    const books = useLibrary(s => s.books);
+    const select = useLibrary(s => s.select);
+    const libraryCardName = useLibrary(s => s.libraryCardName);
 
-    const handleTouchStart = (code: string) => (e: React.TouchEvent) => {
-        e.preventDefault(); // Prevent scroll/zoom
-        triggerKey(code, true);
-    };
-
-    const handleTouchEnd = (code: string) => (e: React.TouchEvent) => {
+    /* ─── movement touch handlers ─── */
+    const handleTouchStart = (flag: keyof MoveFlags) => (e: React.TouchEvent) => {
         e.preventDefault();
-        triggerKey(code, false);
+        e.stopPropagation();
+        setMoveFlag(flag, true);
     };
 
-    // Style for glass buttons
-    const btnClass = "w-16 h-16 rounded-full bg-neutral-900/50 backdrop-blur-md border border-amber-500/30 active:bg-amber-500/40 active:border-amber-500 flex items-center justify-center text-amber-500/80 font-bold select-none touch-none shadow-lg";
+    const handleTouchEnd = (flag: keyof MoveFlags) => (e: React.TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setMoveFlag(flag, false);
+    };
+
+    /* ─── action handlers ─── */
+    const handleSummon = (e: React.TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        summonBook();
+    };
+
+    const handleInteract = (e: React.TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const heldId = Object.keys(bookStates).find(id => bookStates[id] === 'held');
+        if (heldId) {
+            const book = books[heldId];
+            if (!libraryCardName) {
+                alert("ACCESS DENIED: NO LIBRARY CARD.");
+            } else if (book && !book.isLocked) {
+                select(heldId);
+            }
+        }
+    };
+
+    // Glass button style
+    const btn: React.CSSProperties = {
+        width: 60,
+        height: 60,
+        borderRadius: '50%',
+        background: 'rgba(23, 23, 23, 0.5)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'rgba(245, 158, 11, 0.8)',
+        fontWeight: 700,
+        fontSize: 18,
+        userSelect: 'none',
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        cursor: 'pointer',
+    };
+
+    const btnSmall: React.CSSProperties = {
+        ...btn,
+        width: 52,
+        height: 52,
+        fontSize: 11,
+        fontFamily: 'monospace',
+        letterSpacing: 1,
+    };
+
+    const btnAction: React.CSSProperties = {
+        ...btn,
+        width: 72,
+        height: 72,
+        border: '1px solid rgba(245, 158, 11, 0.5)',
+        background: 'rgba(120, 53, 15, 0.2)',
+        fontSize: 11,
+        fontFamily: 'monospace',
+        letterSpacing: 1,
+    };
 
     return (
-        <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-end pb-8 px-6">
-            <div className="flex justify-between items-end w-full pointer-events-auto">
+        <div style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 30,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            paddingBottom: 32,
+            paddingLeft: 24,
+            paddingRight: 24,
+        }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                width: '100%',
+                pointerEvents: 'auto',
+            }}>
                 {/* D-PAD Area */}
-                <div className="grid grid-cols-3 gap-2">
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 8,
+                }}>
                     <div></div>
                     <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.forward)}
-                        onTouchEnd={handleTouchEnd(keys.forward)}
+                        style={btn}
+                        onTouchStart={handleTouchStart('forward')}
+                        onTouchEnd={handleTouchEnd('forward')}
+                        onTouchCancel={handleTouchEnd('forward')}
                     >▲</button>
                     <div></div>
 
                     <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.left)}
-                        onTouchEnd={handleTouchEnd(keys.left)}
+                        style={btn}
+                        onTouchStart={handleTouchStart('left')}
+                        onTouchEnd={handleTouchEnd('left')}
+                        onTouchCancel={handleTouchEnd('left')}
                     >◀</button>
                     <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.backward)}
-                        onTouchEnd={handleTouchEnd(keys.backward)}
+                        style={btn}
+                        onTouchStart={handleTouchStart('backward')}
+                        onTouchEnd={handleTouchEnd('backward')}
+                        onTouchCancel={handleTouchEnd('backward')}
                     >▼</button>
                     <button
-                        className={btnClass}
-                        onTouchStart={handleTouchStart(keys.right)}
-                        onTouchEnd={handleTouchEnd(keys.right)}
+                        style={btn}
+                        onTouchStart={handleTouchStart('right')}
+                        onTouchEnd={handleTouchEnd('right')}
+                        onTouchCancel={handleTouchEnd('right')}
                     >▶</button>
                 </div>
 
                 {/* ACTION BUTTONS */}
-                <div className="flex flex-col gap-4 items-end">
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    alignItems: 'flex-end',
+                }}>
+                    {/* Interact / Open */}
                     <button
-                        className={`${btnClass} w-20 h-20 border-amber-400/50 bg-amber-900/20`}
-                        onTouchStart={handleTouchStart(keys.interact)}
-                        onTouchEnd={handleTouchEnd(keys.interact)}
-                    >SPACE</button>
-                    <div className="flex gap-2">
+                        style={btnAction}
+                        onTouchStart={handleInteract}
+                    >OPEN</button>
+
+                    {/* Summon + Up/Down row */}
+                    <div style={{ display: 'flex', gap: 8 }}>
                         <button
-                            className={btnClass}
-                            onTouchStart={handleTouchStart(keys.up)}
-                            onTouchEnd={handleTouchEnd(keys.up)}
+                            style={btnSmall}
+                            onTouchStart={handleSummon}
+                        >GRAB</button>
+                        <button
+                            style={btnSmall}
+                            onTouchStart={handleTouchStart('up')}
+                            onTouchEnd={handleTouchEnd('up')}
+                            onTouchCancel={handleTouchEnd('up')}
                         >UP</button>
                         <button
-                            className={btnClass}
-                            onTouchStart={handleTouchStart(keys.down)}
-                            onTouchEnd={handleTouchEnd(keys.down)}
+                            style={btnSmall}
+                            onTouchStart={handleTouchStart('down')}
+                            onTouchEnd={handleTouchEnd('down')}
+                            onTouchCancel={handleTouchEnd('down')}
                         >DN</button>
                     </div>
                 </div>

@@ -7,11 +7,24 @@ import * as THREE from 'three';
 export function Desk() {
   const libraryCardName = useLibrary((s) => s.libraryCardName);
   const [hovered, setHover] = useState(false);
+  const [bookHovered, setBookHover] = useState(false);
 
   const openAuth = (e: any) => {
     e.stopPropagation();
     window.dispatchEvent(new Event('open-auth'));
   };
+
+  // Open Canon viewer via interact key (Space) when hovering the pillar book
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (bookHovered && e.code === 'Space') {
+        e.preventDefault();
+        window.dispatchEvent(new Event('open-canon'));
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [bookHovered]);
 
   const GOLD = '#D4AF37';
   const PILLAR_HEIGHT = 1.75;
@@ -65,7 +78,11 @@ export function Desk() {
         </mesh>
 
         {/* === THE YOUNIVERSE BOOK === */}
-        <group position={[0, PILLAR_HEIGHT + 0.55, 0]}>
+        <group
+          position={[0, PILLAR_HEIGHT + 0.55, 0]}
+          onPointerOver={() => { document.body.style.cursor = 'pointer'; setBookHover(true); }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; setBookHover(false); }}
+        >
           {/* Book body — rich dark cover */}
           <RoundedBox
             args={[1.4, 0.18, 1.0]}
@@ -77,6 +94,8 @@ export function Desk() {
               color="#1a0f0a"
               roughness={0.5}
               metalness={0.3}
+              emissive={bookHovered ? '#D4AF37' : '#000000'}
+              emissiveIntensity={bookHovered ? 0.15 : 0}
             />
           </RoundedBox>
 

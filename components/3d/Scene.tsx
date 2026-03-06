@@ -8,14 +8,16 @@ import * as THREE from 'three';
 
 import { PlayerController } from './PlayerController';
 import { ObsidianFloor } from './ObsidianFloor';
+import { FloorLogo } from './FloorLogo';
+import { FloorImage } from './FloorImage';
 import { MainContent } from './MainContent';
 
 export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
-    const ambientIntensity = useUI(s => s.ambientIntensity);
-    const mainLightIntensity = useUI(s => s.mainLightIntensity);
-    const pillarLightIntensity = useUI(s => s.pillarLightIntensity);
-    const hemiIntensity = useUI(s => s.hemiIntensity);
-    const envIntensity = useUI(s => s.envIntensity);
+    const ambientIntensity = 0.8;
+    const mainLightIntensity = 0.6;
+    const pillarLightIntensity = 0.8;
+    const hemiIntensity = 0.4;
+    const envIntensity = 0.5;
 
     return (
         <Canvas
@@ -37,6 +39,8 @@ export function Scene3D({ isMobile = false }: { isMobile?: boolean }) {
 
             {/* Deep Obsidian Floor */}
             <ObsidianFloor />
+            <FloorImage />
+            <FloorLogo />
 
             <Suspense fallback={null}>
                 <Environment preset="warehouse" environmentIntensity={envIntensity} />

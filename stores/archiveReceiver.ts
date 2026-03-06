@@ -106,14 +106,15 @@ function resolveTarget(timestamp: string) {
     const weekOfMonth = Math.min(Math.ceil(day / 7), 4);
 
     const towerKey = MONTH_KEYS[month];
-    const shelfId = `TOWER-${towerKey}-YEAR-${year}`;
+    const yearShort = year.toString().slice(-2);
+    const shelfId = `${towerKey}-${yearShort}`;
 
     // Artifact books are at positions 2, 4, 6, 8 (0-indexed: 1, 3, 5, 7)
     // Week 1 → slot index 1 (B), Week 2 → slot index 3 (D), etc.
     const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const slotIndex = (weekOfMonth * 2) - 1; // Week1→1, Week2→3, Week3→5, Week4→7
     const bookLetter = LETTERS[slotIndex];
-    const bookId = `unit-${shelfId}-${bookLetter}`;
+    const bookId = `${shelfId}-${bookLetter}`;
 
     return { towerKey, shelfId, bookId, bookLetter, year, weekOfMonth };
 }

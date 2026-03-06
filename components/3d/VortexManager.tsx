@@ -102,6 +102,8 @@ export function VortexManager() {
                         // Add click handler to catch floating books
                         onClick={(e) => {
                             e.stopPropagation();
+                            // Distance gate — ignore clicks from far away
+                            if (e.camera && e.point && e.camera.position.distanceTo(e.point) > 30) return;
                             setBookState(id, 'held');
                         }}
                         ref={(ref) => {

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { useSystem } from '../../stores/system';
 import { useUI } from '../../stores/ui';
 import { useLibrary } from '../../stores/library';
+import { moveFlags, setMoveFlag, resetMoveFlags } from '../../stores/moveState';
 
 export function PlayerController({ isMobile }: { isMobile: boolean }) {
     const { camera, gl } = useThree();
@@ -15,12 +16,10 @@ export function PlayerController({ isMobile }: { isMobile: boolean }) {
     const view = useUI(s => s.view);
     const isCatalogOpen = useUI(s => s.isCatalogOpen);
     const isSettingsOpen = useUI(s => s.isSettingsOpen);
+    const isCanonOpen = useUI(s => s.isCanonOpen);
     const selectedBookId = useLibrary(s => s.selectedBookId);
 
-    const isOverlayOpen = isCatalogOpen || isSettingsOpen || !!selectedBookId || !user.isAuthenticated;
-
-    // Movement state
-    const moveState = useRef({ forward: false, backward: false, left: false, right: false, up: false, down: false, run: false });
+    const isOverlayOpen = isCatalogOpen || isSettingsOpen || isCanonOpen || !!selectedBookId || !user.isAuthenticated;
 
     // Velocity for damping
     const velocity = useRef(new THREE.Vector3());
@@ -33,16 +32,22 @@ export function PlayerController({ isMobile }: { isMobile: boolean }) {
         }
     }, [view, camera]);
 
+    // Reset move flags when overlay opens
+    useEffect(() => {
+        if (isOverlayOpen) resetMoveFlags();
+    }, [isOverlayOpen]);
+
+    // Keyboard-driven move flags
     useEffect(() => {
         const onKey = (e: KeyboardEvent, down: boolean) => {
             const k = e.code;
-            if (k === keys.forward) moveState.current.forward = down;
-            if (k === keys.backward) moveState.current.backward = down;
-            if (k === keys.left) moveState.current.left = down;
-            if (k === keys.right) moveState.current.right = down;
-            if (k === keys.up) moveState.current.up = down;
-            if (k === keys.down) moveState.current.down = down;
-            if (k === keys.run) moveState.current.run = down;
+            if (k === keys.forward) setMoveFlag('forward', down);
+            if (k === keys.backward) setMoveFlag('backward', down);
+            if (k === keys.left) setMoveFlag('left', down);
+            if (k === keys.right) setMoveFlag('right', down);
+            if (k === keys.up) setMoveFlag('up', down);
+            if (k === keys.down) setMoveFlag('down', down);
+            if (k === keys.run) setMoveFlag('run', down);
         };
         const onKeyDown = (e: KeyboardEvent) => onKey(e, true);
         const onKeyUp = (e: KeyboardEvent) => onKey(e, false);
@@ -54,6 +59,7 @@ export function PlayerController({ isMobile }: { isMobile: boolean }) {
         };
     }, [keys]);
 
+    // Touch look (mobile only)
     useEffect(() => {
         if (!isMobile) return;
         let lastX = 0;
@@ -87,6 +93,7 @@ export function PlayerController({ isMobile }: { isMobile: boolean }) {
         };
     }, [isMobile, camera, gl, cameraSpeed]);
 
+    // Wheel zoom (stacks view)
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
             if (view !== 'stacks') return;
@@ -122,38 +129,34 @@ export function PlayerController({ isMobile }: { isMobile: boolean }) {
             state.pointer.y = 0;
         }
 
-        const baseSpeed = 40.0 * cameraSpeed; // Higher base for damping
-        const speed = moveState.current.run ? baseSpeed * 3.0 : baseSpeed;
+        const baseSpeed = 40.0 * cameraSpeed;
+        const speed = moveFlags.run ? baseSpeed * 3.0 : baseSpeed;
         const friction = 10.0;
 
         const input = new THREE.Vector3();
-        if (moveState.current.forward) input.z += 1;
-        if (moveState.current.backward) input.z -= 1;
-        if (moveState.current.left) input.x -= 1;
-        if (moveState.current.right) input.x += 1;
-        if (moveState.current.up) input.y += 1;
-        if (moveState.current.down) input.y -= 1;
+        if (moveFlags.forward) input.z += 1;
+        if (moveFlags.backward) input.z -= 1;
+        if (moveFlags.left) input.x -= 1;
+        if (moveFlags.right) input.x += 1;
+        if (moveFlags.up) input.y += 1;
+        if (moveFlags.down) input.y -= 1;
 
         if (input.lengthSq() > 0) input.normalize();
 
-        // Calculate world direction vectors
         const camDirection = new THREE.Vector3();
         camera.getWorldDirection(camDirection);
         const camRight = new THREE.Vector3().crossVectors(camDirection, new THREE.Vector3(0, 1, 0)).normalize();
 
-        // Translate local input to world velocity
         const targetVelocity = new THREE.Vector3();
         targetVelocity.addScaledVector(camDirection, input.z * speed);
         targetVelocity.addScaledVector(camRight, input.x * speed);
         targetVelocity.y += input.y * speed;
 
-        // Apply Damping (Framerate-independent exponential decay)
         const alpha = 1 - Math.exp(-friction * delta);
         velocity.current.lerp(targetVelocity, alpha);
 
         camera.position.addScaledVector(velocity.current, delta);
 
-        // Bounds
         if (camera.position.y < 2.0) {
             camera.position.y = 2.0;
             velocity.current.y = Math.max(0, velocity.current.y);

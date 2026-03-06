@@ -13,13 +13,6 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       // Listen on all addresses
       host: true,
-      // Ensure WebSocket protocol matches (sometimes helpful with proxies/tunnels)
-      hmr: {
-        clientPort: 3000
-      },
-      watch: {
-        usePolling: true,
-      },
     },
     plugins: [react()],
     define: {

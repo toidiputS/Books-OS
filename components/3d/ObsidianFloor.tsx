@@ -20,9 +20,9 @@ function createObsidianTexture(): THREE.CanvasTexture {
         const y = Math.random() * size;
 
         ctx.beginPath();
-        const opacity = 0.02 + Math.random() * 0.06;
+        const opacity = 0.15 + Math.random() * 0.15;
         ctx.strokeStyle = `rgba(212, 175, 55, ${opacity})`;
-        ctx.lineWidth = 0.5 + Math.random() * 1.0;
+        ctx.lineWidth = 1.0 + Math.random() * 1.5;
 
         let curX = x;
         let curY = y;
@@ -57,9 +57,9 @@ export function ObsidianFloor() {
             <planeGeometry args={[1000, 1000]} />
             <meshStandardMaterial
                 map={texture}
-                roughness={0.4}
-                metalness={0.1}
-                envMapIntensity={0.3}
+                roughness={0.9}
+                metalness={0.5}
+                envMapIntensity={0.02}
             />
         </mesh>
     );
