@@ -2,9 +2,9 @@ const CACHE_NAME = 'books-os-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/logo.svg',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/assets/logo.svg',
+  '/assets/icon-192.png',
+  '/assets/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
