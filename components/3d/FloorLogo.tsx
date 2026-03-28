@@ -7,9 +7,12 @@ export function FloorLogo() {
     useEffect(() => {
         const loader = new THREE.TextureLoader();
         loader.load(
-            '/assets/floor-logo.png',
+            '/assets/logo.svg',
             (tex) => {
                 tex.colorSpace = THREE.SRGBColorSpace;
+                tex.anisotropy = 16; // Maximize sharpness at grazing angles
+                tex.minFilter = THREE.LinearMipMapLinearFilter;
+                tex.magFilter = THREE.LinearFilter;
                 setTexture(tex);
             },
             undefined,
@@ -27,8 +30,6 @@ export function FloorLogo() {
             <meshBasicMaterial
                 map={texture}
                 transparent
-                opacity={0.85}
-                blending={THREE.AdditiveBlending}
                 depthWrite={false}
                 polygonOffset
                 polygonOffsetFactor={-1}
