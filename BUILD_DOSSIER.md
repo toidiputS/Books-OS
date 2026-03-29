@@ -1,6 +1,6 @@
 # 📚 Books OS v1.1 — Full Build Dossier
 
-> **Snapshot date:** 2026-02-24 · **Branch:** `main` · **Working tree:** Clean
+> **Snapshot date:** 2026-03-28 · **Branch:** `main` · **Working tree:** Clean
 > **Remote:** [github.com/toidiputS/Books-OS](https://github.com/toidiputS/Books-OS.git)
 > **License:** MIT · **Copyright:** IT'S LLC
 
@@ -14,12 +14,29 @@ The archive holds **4,200 books** across 14 towers × 30 shelves × 10 books per
 
 An **Archive Receiver** system listens for incoming artifacts via `localStorage`, automatically placing content into the correct tower, shelf, and book slot based on timestamp.
 
+**Entry Flow:** Books OS employs a frictionless, email-only "Open Door Policy." Users enter via a sleek, minimalist landing page with just a thin white line and an `@` placeholder. There are no password requirements, leveraging a Product-Led Growth (PLG) and deferred authentication strategy. Access to specific content within the portal is gated downstream by token systems and external purchase tiers.
+
 **Tagline:** *"No Hero. No Guru. Just a New You."*  
 **Nickname:** *Master Nexus • Portals OS • The Youniverse*
 
 ---
 
-## 2. Tech Stack
+## 2. The PortalsOS Architecture & The Flow
+
+**The Youniverse (PortalsOS / itsyouonline.com):** The Alpha and the Omega. The event horizon and the singularity. The beginning and the end. All interactions enter here. From this absolute center, the **Oracle** diagnoses and orchestrates the entire system.
+
+**Books OS** (this build) serves as the permanent, read-only memory bank of the broader Youniverse. It is the final destination in the execution lifecycle. The relationships between these core systems are governed by **The Flow**:
+
+1. **Oracle (The Orchestrator)**: The executive intelligence that orchestrates the execution lifecycle. When a user provides intent, Oracle maps the request, selects the appropriate **Nexus Agent** (which are independent PWAs), and opens them directly inside the PortalsOS environment in their own windows, orchestrating all ensuing handoffs.
+2. **NotNotes (The Compiler)**: NotNotes acts as the compiler. It actively collects all the raw deliverables produced by agents during a session and processes them to deliver the final, compiled artifact.
+3. **The Commit Contract**: The explicit action of the human manually committing a Nexus agent's deliverable into NotNotes.
+4. **Books OS (The Younique Archives)**: This application. The final, permanent 14-tower archive where compiled artifacts from NotNotes are stored as immutable canon.
+
+> **The Humanot Protocol:** All communication and handoffs between NotNotes, Oracle, the Agents, and the Human are governed by **Humanot**—a specific language and protocol created to ensure clear, constrained, and explicit agent behavior. All handoffs happen transparently, much like a conversation.
+
+---
+
+## 3. Tech Stack
 
 | Layer | Technology | Version |
 |-------|-----------|---------| 
@@ -28,19 +45,19 @@ An **Archive Receiver** system listens for incoming artifacts via `localStorage`
 | **State** | Zustand (with `persist` middleware → localStorage) | ^5.0.9 |
 | **Validation** | Zod | 3.23.8 |
 | **Styling** | Tailwind CSS (PostCSS plugin) | ^3.4.1 |
-| **Build** | Vite | ^5.4.2 |
+| **Build & Deploy**| Vite (with manualChunks for 3D slicing) + Vercel | ^5.4.2 |
 | **IDs** | `uuid` | 9.0.1 |
 | **Fonts** | EB Garamond, Cinzel, Inter (Google Fonts CDN) | — |
-| **PWA** | manifest.json + sw.js (Service Worker) | — |
+| **PWA** | manifest.json + sw.js (properly scoped in /public) | — |
 | **Audio** | Web Speech API (`speechSynthesis`) | — |
 
 ---
 
-## 3. Repository Structure
+## 4. Repository Structure
 
 ```
 books-os-v1.1/
-├── index.html              ← Entry point, loads fonts, CSS, mounts #root
+├── index.html              ← Entry point, loads fonts, CSS, sets #000 default background
 ├── index.tsx               ← React DOM bootstrap (StrictMode)
 ├── index.css               ← Tailwind directives + custom scrollbar/paper utilities
 ├── App.tsx                 ← Main application shell (~510 lines)
@@ -56,7 +73,7 @@ books-os-v1.1/
 │       ├── BookOpenOverlay.tsx ← Chapter-based book reader (~210 lines)
 │       ├── ArchiveToast.tsx    ← Gold-bordered toast notifications (~60 lines)
 │       ├── Catalog.tsx         ← Search/filter modal for all books (~95 lines)
-│       └── LandingPage.tsx     ← Entry gate with name/email + SpeechSynthesis (~127 lines)
+│       └── LandingPage.tsx     ← Frictionless email-only entry gateway
 │
 ├── stores/
 │   ├── library.ts          ← 14-tower library, 4,200 books, archive chapters (~315 lines)
@@ -67,38 +84,31 @@ books-os-v1.1/
 ├── types/                  ← Zod schemas (runtime-validated domain models)
 │   ├── catalog.ts, content.ts, discovery.ts, library.ts, social.ts
 │
-├── services/
-│   └── validation.ts       ← Generic safeParse<T> wrapper for Zod
+├── services/               ← Utility wrappers
+├── utils/                  ← Shared constants
 │
-├── utils/
-│   └── z.ts                ← Shared Zod primitives (zId, zSlug, zUrl, etc.)
-│
-├── public/assets/          ← Static assets (logo.svg, y-a-logo.svg, icons)
-├── sw.js                   ← Service Worker (Network-first HTML, cache-first assets)
-├── manifest.json           ← PWA manifest (Stand-alone, custom branding)
+├── public/                 ← Static assets + Service Worker scripts
+│   ├── sw.js               ← Service Worker (Network-first HTML, cache-first assets)
+│   └── assets/             ← Fonts, logo.svg, y-a-logo.svg
 ├── tailwind.config.js      ← Custom colors (paper, ink, wood), fonts, animation
 ├── postcss.config.js       ← PostCSS with Tailwind + Autoprefixer
-├── vite.config.ts          ← Dev server on :3000, env injection, path aliases
-├── tsconfig.json           ← ES2022, bundler resolution
-└── .env.local              ← GEMINI_API_KEY=PLACEHOLDER_API_KEY
+├── vite.config.ts          ← manualChunks configured to separate ThreeJS dependencies
+└── .env.local              ← Environment overrides
 ```
-
-**Total source files:** ~23 (excluding config/meta)  
-**Total application code:** ~123 KB across 23 TS/TSX files
 
 ---
 
-## 4. Architecture Deep-Dive
+## 5. Architecture Deep-Dive
 
-### 4.1 State Architecture (3 Zustand Stores)
+### 5.1 State Architecture (3 Zustand Stores)
 
 | Store | Persist Key | Purpose | Key State |
 |-------|------------|---------|-----------|
-| `useLibrary` | `books-os:library-v7` | All book/shelf/tower data & interactions | `books`, `shelves`, `bookStates`, `unlockedShelves`, `pendingArrivals` |
+| `useLibrary` | `books-os:library-v7` | All book/shelf/tower data | `books`, `shelves`, `bookStates`, `unlockedShelves`, `pendingArrivals` |
 | `useSystem` | `books-os:system-v5` | Settings, auth, perf | `theme`, `keys` (KeyMap), `user`, `lightingLevel`, `cameraSpeed` |
 | `useUI` | *(not persisted)* | Ephemeral UI toggles | `view`, `isCatalogOpen`, `isSettingsOpen` |
 
-### 4.2 14-Tower Structure
+### 5.2 14-Tower Structure
 
 | Tower | Key | Label | Subtitle | Books |
 |-------|-----|-------|----------|-------|
@@ -119,131 +129,55 @@ books-os-v1.1/
 
 **Total: 14 × 30 × 10 = 4,200 books**
 
-- Monthly towers: Shelves labeled by year (2026–2055)
-- Nexus/Before: Shelves labeled numerically (SHELF 1–30)
-- February shelf 1 + Nexus shelf 1 auto-unlocked on initialization
-- Nexus books: Rich gold `#B8860B`
-- Before books: Deep burgundy `#6B0F1A`
-- Monthly books: Color-coded by slot (dark red, dark green, dark blue, goldenrod)
+### 5.3 Archive Receiver
 
-### 4.3 Book Lifecycle
+`archiveReceiver.ts` listens for `younique_archive_commit` in localStorage. It maps incoming artifacts generated by **NotNotes** into proper positions within the Towers by using precise timestamp extraction to calculate month, year, and week slot. 
 
-- All 4,200 books begin greyed-out and locked
-- Unlocked shelf books show their spine color + gold foil strips + embossed letter
-- Any held book opens the `BookOpenOverlay` (no A–J filter)
-- States: `shelf → flying → held → BookOpenOverlay`
+### 5.4 Performance Optimizations
 
-### 4.4 Archive Receiver
-
-`archiveReceiver.ts` listens for `younique_archive_commit` in localStorage:
-
-| Step | Action |
-|------|--------|
-| 1 | Parse JSON payload from localStorage |
-| 2 | Resolve timestamp → tower (month) + shelf (year) + book slot (week 1–4) |
-| 3 | Map slides → chapters (cover→title-page, bullets→numbered-list, etc.) |
-| 4 | Upsert book: append chapters (dedupe by deckId), set Goldenrod `#B8860B` |
-| 5 | Store `who.color` as `toolGlowColor` on the book |
-| 6 | Unlock the target shelf |
-| 7 | Queue arrival animation |
-| 8 | Clear localStorage key |
-| 9 | Toast notification: "A new artifact has arrived from [tool]..." |
-
-### 4.5 3D Scene Composition
-
-| Component | Responsibility |
-|-----------|---------------|
-| **Scene3D** | `<Canvas>` with fog, dark walnut wood floor (+ Y-A logo), lowered lighting, 14-tower ring |
-| **PlayerController** | WASD + pointer lock, touch, wheel zoom, **middle-click to unlock cursor** |
-| **MainContent** | Renders 14 TowerBase blocks + 420 shelves stacked vertically per tower |
-| **TowerBase** | Obsidian block with gold-engraved tower number, label, divider, subtitle |
-| **VortexManager** | Animates flying books in orbital paths, manages auto-return timers |
-| **HeldBookManager** | Attaches "held" books to camera position |
-| **BookSpine3D** | Book mesh with leather texture, **gold foil strip**, **bottom trim**, embossed letter |
-| **Shelf** | 10-slot shelf with obsidian board, gold year labels, deterministic RNG layout |
-| **Desk** | Center display pillar + "The Youniverse" book (+ Logo emblem) + gold nameplate |
-
-### 4.6 Performance Optimizations
-
-- **Shared geometries** pre-allocated: `sharedBoxGeo`, `sharedPageGeo`, `sharedEmptyMat`
-- **Procedural leather texture** generated once via `CanvasTexture` and cached
-- **Deterministic RNG** (mulberry32) for shelf layout — no re-renders on remount
-- **Shallow selectors** via `useShallow()` — shelves only re-render when their own books change state
-- **Progressive loading** — shelves batch in 42 at a time to avoid frame drops on the 420 shelf load
-- **`PerfBudget`** component reports real-time FPS/frame time
+- **Vite `manualChunks` strategy**: Separated `@react-three` and `three` out of the main bundle to guarantee sub-500kB core chunks for Vercel deployment.
+- **Shared geometries**: Pre-allocated structures `sharedBoxGeo`, `sharedPageGeo`.
+- **Procedural textures**: Rendered natively rather than fetched, saving bandwidth and stopping 404 errors (e.g. solid dark material for floors rather than heavy bitmaps). 
+- **Deterministic RNG**: (mulberry32) for shelf layout — no re-renders on remount.
+- **Progressive loading**: Shelves batch in 42 at a time.
 
 ---
 
-## 5. Features Inventory
+## 6. Features Inventory
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | 14-Tower Younique Archive | ✅ Live | 4,200 books, gold-engraved bases |
-| Archive Receiver | ✅ Live | localStorage listener, auto-placement by timestamp |
-| Toast Notifications | ✅ Live | Gold-bordered, auto-dismiss, global `showToast()` |
-| Display Pillar + "The Youniverse" | ✅ Live | Center of ring, gold accents, spotlight |
+| Archive Receiver | ✅ Live | Extends The Youniverse memory horizontally |
+| Open-Door Authentication | ✅ Live | Minimalist email capture overriding Supabase passwords |
 | 3D Library Navigation (WASD + Mouse) | ✅ Live | Pointer lock, configurable speed |
 | Middle-Click Cursor Unlock | ✅ Live | Alternative to ESC |
-| Mobile Touch Controls | ✅ Live | D-pad + action buttons |
-| Book Vortex (floating books) | ✅ Live | 20–30s flight, auto-return |
-| Book Summoning (Tab) | ✅ Live | Toggle held/returned |
-| Book Reader Overlay | ✅ Live | All books open with `BookOpenOverlay` |
+| Book Vortex & Summoning | ✅ Live | Smooth parabolic flight arcs |
 | Premium Book Spines | ✅ Live | Gold foil strip, bottom trim, embossed letter |
 | Catalog Search | ✅ Live | Filter by title/author |
-| Landing Page + Speech Greeting | ✅ Live | Web Speech API |
-| Auth (Library Card) | ✅ Live | Name persisted to localStorage |
-| Settings Menu | ✅ Live | Keybindings, camera speed, lighting, theme, clear data |
-| Service Worker / PWA | ✅ Live | Network-first for HTML, custom icons (192, 512, SVG) |
-| Gemini API Integration | 🔲 Placeholder | Key defined but no calls made |
-| Zod Domain Models | ✅ Defined | 5 schema modules, not yet consumed by UI |
+| Service Worker / PWA | ✅ Live | Correctly scoped at root relying on Vercel deployment |
 
 ---
 
-## 6. Design System
+## 7. Design System
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | **Background** | `#030303` | Scene background + fog |
-| **Floor** | `#1e110a` | Dark walnut wood with procedural grain, knots, and Y-A Logo |
+| **Floor** | `#0f0f13` | Solid dark material replacing missing heavy textures. Crisp anisotropic logo filtering. |
 | **Tower bases** | `#0a0a0a` | Obsidian blocks, metalness 0.85 |
-| **Shelf boards** | `#0a0a0a` | Obsidian boards, metalness 0.85 |
 | **Gold** | `#D4AF37` | Engravings, labels, accents |
 | **Dark Gold** | `#B8860B` | Subtitles, Nexus book color, foil strips |
-| **Book overlay** | `bg: #121212, text: #F5F5DC, accent: #D4AF37` | Dark UI with gold accents |
-| **Pillar** | `#0e0e0e` column, `#0a0a0a` base | Center display |
-| **Ambient light** | `#fff5e6`, warm | Lowered intensity for moody atmosphere |
-
-**Typography:** EB Garamond (serif body), Cinzel (display headers), Inter (sans UI)
 
 ---
 
-## 7. Git History (Latest)
+## 8. Git History (Latest)
 
-| Commit | Message |
-|--------|---------|
-| `ac4b1f2` | **Final Polish: Dark walnut floor, Y-A floor logo, Youniverse book emblem, PWA icon/SW fixes** |
-| `09b9e63` | **14-Tower Younique Archive: gold accents, middle-click unlock, archive receiver, toast system, premium book spines** |
-| `fbba215` | Update attribution to It's LLC |
-| `f244389` | Add MIT License and update package.json |
-| `cd7b9cf` | Update README with premium project documentation |
-| `7abc1e6` | Performance optimizations and stability fixes for 2,400+ books |
-| `b615f66` | Fix Tailwind production issue and React 19 consistency |
-| `63f1bb2` | Sync local changes with GitHub |
-
-> **Note:** Earlier commits reference a "Vattle Arena" codebase — the repo was repurposed. The current Books OS code was established around commit `63f1bb2` onward.
-
----
-
-## 8. Environment & Configuration
-
-| File | Purpose |
-|------|---------|
-| `vite.config.ts` | Dev server on port 3000, HMR, file polling, Gemini key injection |
-| `tsconfig.json` | ES2022, bundler resolution, `@/*` path alias |
-| `tailwind.config.js` | Custom colors, fonts, `fadeIn` animation |
-| `postcss.config.js` | Tailwind + Autoprefixer |
-| `manifest.json` | PWA: standalone, black theme, vite.svg icon |
-| `.env.local` | `GEMINI_API_KEY=PLACEHOLDER_API_KEY` |
+| Date | Focus | Message |
+|------|-------|---------|
+| `2026-03-28` | **Product Led Growth Upgrade** | Refactored LandingPage for frictionless Open Door policy. Removed Supabase password gates. Added slim white line layout. |
+| `2026-03-28` | **Vercel Polish & PWA Stability** | Fixed manualChunks breaking 500kB warning, properly scoped sw.js, disabled missing `floor.png` dependency and fixed Logo additive blending. |
+| `2026-02` | **14-Tower Expansion** | Built gold accents, middle-click unlock, archive receiver, toast system, premium book spines. |
 
 ---
 
@@ -252,10 +186,7 @@ books-os-v1.1/
 | Area | Observation | Severity |
 |------|-------------|----------|
 | **No tests** | Zero test files, no test runner, no CI pipeline | ⚠️ High |
-| **Service Worker** | Fully enabled with network-first strategy for index.html | ✅ Fixed |
-| **BookOpenOverlay** | Currently shows placeholder chapters — awaiting archive content | Info |
-| **Archive Receiver** | Ready for NotNotes integration via `younique_archive_commit` key | Info |
-| **Gemini API** | Key placeholder exists but zero calls made | Info |
-| **Zod types** | 5 schema modules defined but never imported by stores/components | ⚠️ Medium |
-| **PWA icon** | Custom branding integrated (logo.svg, 192, 512) | ✅ Fixed |
-| **No routing** | Single-page with view state toggle (`desk` / `stacks`) | Info |
+| **Deferred Authentication / Paywall** | Entry is open, but token systems + Supabase Magic Link auth are required *downstream* so purchases are secured. | 🔥 Critical Next Phase |
+| **Zod types** | 5 schema modules defined but never fully consumed by stores/components | ⚠️ Medium |
+| **Service Worker** | Live and caching correctly against Vercel public dir | ✅ Fixed |
+| **Performance** | Build fits under chunks and visually stable on all renders | ✅ Fixed |
